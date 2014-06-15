@@ -1,0 +1,4 @@
+*.lproj
+VoxSpriter-Prefix.pch
+VoxSpriter-Info.plist
+.DS_Store
