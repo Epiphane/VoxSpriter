@@ -32,6 +32,7 @@ public:
    void quit();
    
    void mouseMove(double x, double y);
+   void click(int button, int action, int mods);
    
    bool isRunning() { return running; }
 };

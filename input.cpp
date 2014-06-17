@@ -49,3 +49,7 @@ void Input::setWindow(GLFWwindow *_window) {
 bool Input::shouldExit() {
    return inputShouldExit;
 }
+
+void Input::click(GLFWwindow *window, int button, int action, int mods) {
+   application->click(button, action, mods);
+}

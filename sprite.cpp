@@ -51,7 +51,7 @@ void Sprite::render(Graphics *graphics) {
    graphics->renderSprite(vbo, vbo_color, numVertices, position);
 }
 
-void Sprite::castSelect(glm::vec3 ray, glm::vec3 direction) {
+bool Sprite::castSelect(glm::vec3 ray, glm::vec3 direction) {
    double startDist = mag(ray);
    double dist = startDist;
    
@@ -60,16 +60,17 @@ void Sprite::castSelect(glm::vec3 ray, glm::vec3 direction) {
       lastDist = dist;
       ray += direction;
       if(rayCollide(ray))
-         return;
+         return true;
       dist = mag(ray);
    }
    
    while(dist < startDist) {
       ray += direction;
       if(rayCollide(ray))
-         return;
+         return true;
       dist = mag(ray);
    }
+   return false;
 }
 
 bool Sprite::rayCollide(glm::vec3 ray) {
@@ -86,7 +87,7 @@ bool Sprite::rayCollide(glm::vec3 ray) {
    if(blocks[pos[0]][pos[1]][pos[2]] != 0) {
       if(select[0] != pos[0] || select[1] != pos[1] || select[2] != pos[2]) {
          blocks[pos[0]][pos[1]][pos[2]] = 2;
-         if(select[0] >= 0)
+         if(select[0] >= 0 && blocks[select[0]][select[1]][select[2]] != 0)
             blocks[select[0]][select[1]][select[2]] = 1;
          for(int i = 0; i < 3; i ++)
             select[i] = pos[i];
@@ -95,6 +96,14 @@ bool Sprite::rayCollide(glm::vec3 ray) {
       return true;
    }
    return false;
+}
+
+void Sprite::click(glm::vec3 ray, glm::vec3 direction) {
+   if(castSelect(ray, direction)) {
+      std::cout << select[0] << ", " << select[1] << ", " << select[2] << std::endl;
+      blocks[select[0]][select[1]][select[2]] = 0;
+      createMesh();
+   }
 }
 
 void Sprite::setBlock(int x, int y, int z, unsigned int color) {

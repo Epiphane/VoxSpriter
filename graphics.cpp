@@ -50,6 +50,7 @@ int Graphics::initWindow() {
    
    // Connect input handler
    Input::setWindow(window);
+   glfwSetMouseButtonCallback(window, Input::click);
    
    // Black background
    glClearColor(0.2f, 1.0f, 1.0f, 0.0f);

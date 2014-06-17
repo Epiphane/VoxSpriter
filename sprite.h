@@ -33,7 +33,8 @@ public:
    Sprite();
    ~Sprite();
    
-   void castSelect(glm::vec3 ray, glm::vec3 direction);
+   void click(glm::vec3 ray, glm::vec3 direction);
+   bool castSelect(glm::vec3 ray, glm::vec3 direction);
    void setBlock(int x, int y, int z, unsigned int color);
    
    void render(Graphics *graphics);
