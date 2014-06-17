@@ -39,6 +39,7 @@ void Camera::setAngles(vec2 angle) {
    position.y = dist * sin(angles.y);
    
    double dist = this->dist * cos(angles.y);
+   up = abs(dist) < 0.00001 ? vec3(0, -1, 0) : vec3(0, 1, 0);
    position.x = dist * cos(angles.x);
    position.z = dist * sin(angles.x);
 }
@@ -49,4 +50,11 @@ void Camera::zoom(double dx) {
    dist += dx;
    
    position *= dist;
+}
+
+vec3 Camera::getDirection() {
+   vec3 dir = glm::normalize(position);
+   dir *= -1;
+   
+   return dir;
 }

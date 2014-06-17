@@ -19,7 +19,8 @@ private:
    unsigned int ***blocks;
    Palette *palette;
    
-   int size[3];
+   int size[3], select[3];
+   bool rayCollide(glm::vec3 ray);
    
    GLuint vbo, vbo_color;
    int numVertices;
@@ -31,6 +32,9 @@ private:
 public:
    Sprite();
    ~Sprite();
+   
+   void castSelect(glm::vec3 ray, glm::vec3 direction);
+   void setBlock(int x, int y, int z, unsigned int color);
    
    void render(Graphics *graphics);
    void render(Graphics *graphics, glm::vec3 cameraChunk);

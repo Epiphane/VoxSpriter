@@ -34,6 +34,7 @@ public:
    void zoom(double dx);
    
    glm::vec3 getPosition() { return position; }
+   glm::vec3 getDirection();
    glm::mat4 getViewMatrix();
 };
 

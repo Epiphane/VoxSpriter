@@ -11,5 +11,10 @@
 using namespace glm;
 
 byte3 Palette::getRGB(unsigned int colorID) {
-   return byte3(0, 255, 0);
+   switch(colorID) {
+      case 1:
+         return byte3(0, 255, 0);
+      default:
+         return byte3(255, 127, 0);
+   }
 }

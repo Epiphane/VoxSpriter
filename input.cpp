@@ -13,10 +13,10 @@ void Input::setState(Input_State _state) {
    state = _state;
    ready = true;
    
-   /* if(state == InGame) {
-      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+   if(state == InGame) {
+      //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
       glfwSetCursorPos(window, w_width / 2, w_height / 2);
-   } */
+   }
 }
 
 bool Input::keyState(int key, int state) {
@@ -36,10 +36,6 @@ void Input::getMousePos(double *x, double *y) {
       return;
    
    glfwGetCursorPos(window, x, y);
-   *x = w_width / 2 - *x;
-   *y = w_height / 2 - *y;
-   
-   glfwSetCursorPos(window, w_width / 2, w_height / 2);
 }
 
 void Input::setHandler(void *_game) {

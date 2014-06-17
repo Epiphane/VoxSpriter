@@ -16,6 +16,7 @@ Sprite::Sprite() {
    size[0] = default_size[0];
    size[1] = default_size[1];
    size[2] = default_size[2];
+   select[0] = select[1] = select[2] = -1;
    
    blocks = new unsigned int**[size[0]];
    for(int i = 0; i < size[0]; i ++) {
@@ -50,6 +51,56 @@ void Sprite::render(Graphics *graphics) {
    graphics->renderSprite(vbo, vbo_color, numVertices, position);
 }
 
+void Sprite::castSelect(glm::vec3 ray, glm::vec3 direction) {
+   double startDist = mag(ray);
+   double dist = startDist;
+   
+   double lastDist = dist;
+   while(dist <= lastDist) {
+      lastDist = dist;
+      ray += direction;
+      if(rayCollide(ray))
+         return;
+      dist = mag(ray);
+   }
+   
+   while(dist < startDist) {
+      ray += direction;
+      if(rayCollide(ray))
+         return;
+      dist = mag(ray);
+   }
+}
+
+bool Sprite::rayCollide(glm::vec3 ray) {
+   int pos[3] = { static_cast<int>(floor(ray.x) + size[0] / 2),
+                  static_cast<int>(floor(ray.y) + size[1] / 2),
+                  static_cast<int>(floor(ray.z) + size[2] / 2) };
+   
+   if(pos[0] < 0 || pos[0] >= size[0] ||
+      pos[1] < 0 || pos[1] >= size[1] ||
+      pos[2] < 0 || pos[2] >= size[2])
+      return false;
+   
+   // If we're in bounds, check for collision
+   if(blocks[pos[0]][pos[1]][pos[2]] != 0) {
+      if(select[0] != pos[0] || select[1] != pos[1] || select[2] != pos[2]) {
+         blocks[pos[0]][pos[1]][pos[2]] = 2;
+         if(select[0] >= 0)
+            blocks[select[0]][select[1]][select[2]] = 1;
+         for(int i = 0; i < 3; i ++)
+            select[i] = pos[i];
+         createMesh();
+      }
+      return true;
+   }
+   return false;
+}
+
+void Sprite::setBlock(int x, int y, int z, unsigned int color) {
+   blocks[x][y][z] = color;
+}
+
 void Sprite::createMesh() {
    int vertSize = size[0] * size[1] * size[2] * 12;
    byte4 *vertices = new byte4[vertSize];
@@ -66,9 +117,6 @@ void Sprite::createMesh() {
          }
       }
    }
-   
-   std::cout << vertices[0] << std::endl;
-   std::cout << vertices[1] << std::endl;
    
    glBindBuffer(GL_ARRAY_BUFFER, vbo);
    glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(byte4),
