@@ -13,17 +13,18 @@
 #include "palette.h"
 #include "globals.h"
 #include "graphics.h"
+#include "input.h"
 
 class Sprite {
 private:
+   GLuint vbo, vbo_color, cursor, cursor_color;
+   int numVertices;
    unsigned int ***blocks;
    Palette *palette;
    
-   int size[3], select[3];
-   bool rayCollide(glm::vec3 ray);
-   
-   GLuint vbo, vbo_color;
-   int numVertices;
+   int size[3], select[4];
+   int rayCollide(glm::vec3 ray);
+   int rayCollide(glm::vec3 ray, glm::vec3 lookAhead);
    
    void createBlock(byte4 *vertices, byte3 *vertexRGB, int &offset,
                     unsigned int block, int x, int y, int z);
@@ -33,13 +34,25 @@ public:
    Sprite();
    ~Sprite();
    
-   void click(glm::vec3 ray, glm::vec3 direction);
+   void update(glm::vec3 ray, glm::vec3 direction);
+   void click(glm::vec3 ray, glm::vec3 direction, int action, int mods);
+   
+   bool castRay(glm::vec3 ray, glm::vec3 direction, bool lastEmpty);
    bool castSelect(glm::vec3 ray, glm::vec3 direction);
    void setBlock(int x, int y, int z, unsigned int color);
    
    void render(Graphics *graphics);
    void render(Graphics *graphics, glm::vec3 cameraChunk);
    void createMesh();
+};
+
+static const byte4 cursorVertices[] = {
+   byte4(0, 0, 1, 4), byte4(1, 1, 1, 127),
+   byte4(1, 0, 0, -4), byte4(0, 1, 0, -4),
+   byte4(1, 0, 1, 2), byte4(1, 1, 0, 127),
+   byte4(0, 0, 0, -2), byte4(0, 1, 1, -2),
+   byte4(0, 1, 1, 1), byte4(1, 1, 0, 127),
+   byte4(0, 0, 0, -1), byte4(1, 0, 1, -1)
 };
 
 #endif /* defined(__VoxSpriter__sprite__) */

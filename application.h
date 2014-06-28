@@ -22,6 +22,8 @@ private:
    Sprite *sprite;
    
    bool running;
+   
+   void computeRayAndDir(glm::vec3 *ray, glm::vec3 *direction);
 public:
    Application() :
    graphics(), running(false) {};

@@ -1,6 +1,5 @@
 #include "shader.h"
 #include "graphics.h"
-#include "globals.h"
 
 using namespace glm;
 
@@ -53,14 +52,14 @@ int Graphics::initWindow() {
    glfwSetMouseButtonCallback(window, Input::click);
    
    // Black background
-   glClearColor(0.2f, 1.0f, 1.0f, 0.0f);
+   glClearColor(0.1f, 0.8f, 0.8f, 0.0f);
    
    // Enable depth test
    glEnable(GL_DEPTH_TEST);
    // Accept only closer fragments
    glDepthFunc(GL_LESS);
    // Cull triangles in which the normal doesn't face the camera
-   glEnable(GL_CULL_FACE);
+   //glEnable(GL_CULL_FACE);
    
 	glGenVertexArrays(1, &vertexArrayID);
 	glBindVertexArray(vertexArrayID);
@@ -70,12 +69,24 @@ int Graphics::initWindow() {
    const char *fragShader = "shaders/FragmentShader.glsl";
    programID = LoadShaders(vertShader, geomShader, fragShader);
    
+   const char *flatVertShader = "shaders/FlatVertexShader.glsl";
+   const char *flatGeomShader = "shaders/FlatGeometryShader.glsl";
+   const char *flatFragShader = "shaders/FlatFragmentShader.glsl";
+   flatProgramID = LoadShaders(flatVertShader, flatGeomShader, flatFragShader);
+   
    // Get a handle for the MVP uniform
    mvpID = glGetUniformLocation(programID, "MVP");
    
    // Get a handle for our buffers
    vertexPositionID = glGetAttribLocation(programID, "vertex");
    vertexColorID = glGetAttribLocation(programID, "color");
+   
+   flatColorID = glGetUniformLocation(flatProgramID, "color");
+   flatWidthID = glGetAttribLocation(flatProgramID, "width");
+   
+   // Create buffers for flat squares
+   glGenBuffers(1, &vertexBuffer);
+   glGenBuffers(1, &colorBuffer);
    
    camera = new Camera();
    
@@ -85,9 +96,6 @@ int Graphics::initWindow() {
 void Graphics::beginRender() {
    // Clear the screen
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   
-   // Use shader
-   glUseProgram(programID);
    
    projection = perspective(45.0f, 4.0f / 3.0f, 0.1f, 1000.0f);
    view = camera->getViewMatrix();
@@ -100,6 +108,10 @@ void Graphics::endRender() {
 }
 
 void Graphics::renderSprite(int vertexBuffer, int colorBuffer, int numVertices, vec3 position) {
+   
+   // Use shader
+   glUseProgram(programID);
+   
    // Compute model matrices
    mat4 model = translate(mat4(1.0f), position);
    
@@ -132,6 +144,57 @@ void Graphics::renderSprite(int vertexBuffer, int colorBuffer, int numVertices, 
    
    // Draw the triangle !
    glDrawArrays(GL_LINES, 0, numVertices);
+   
+   glDisableVertexAttribArray(vertexPositionID);
+   glDisableVertexAttribArray(vertexColorID);
+}
+
+void Graphics::renderSquareFlat(byte3 color, vec3 topLeft, float width, float height) {
+   
+   // Use shader
+   glUseProgram(flatProgramID);
+   
+   GLfloat vertex[8] = { topLeft.x, topLeft.y, topLeft.z, 1,
+                         topLeft.x + width, topLeft.y + height, topLeft.z, 255 };
+   byte3 rgb[2] = { color, color };
+   
+   glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(vertex),
+                vertex, GL_STATIC_DRAW);
+   
+   glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(rgb),
+                rgb, GL_STATIC_DRAW);
+   
+   mat4 MVP = mat4(1.0f);
+   
+   // Send transformation to the currently bound shader's MVP
+   glUniformMatrix4fv(mvpID, 1, GL_FALSE, &MVP[0][0]);
+   
+   // First attribute buffer: vertices
+   glEnableVertexAttribArray(vertexPositionID);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+   glVertexAttribPointer(vertexPositionID,   // The attribute to configure
+                         4,                  // size
+                         GL_FLOAT,           // type
+                         GL_FALSE,           // normalized?
+                         0,                  // stride
+                         (void*)0            // array buffer offset
+                         );
+   
+   // First attribute buffer: vertices
+   glEnableVertexAttribArray(vertexColorID);
+   glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+   glVertexAttribPointer(vertexColorID,      // The attribute to configure
+                         3,                  // size
+                         GL_UNSIGNED_BYTE,   // type
+                         GL_FALSE,           // normalized?
+                         0,                  // stride
+                         (void*)0            // array buffer offset
+                         );
+   
+   // Draw the triangle !
+   glDrawArrays(GL_LINES, 0, 2);
    
    glDisableVertexAttribArray(vertexPositionID);
    glDisableVertexAttribArray(vertexColorID);

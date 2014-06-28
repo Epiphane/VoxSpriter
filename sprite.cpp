@@ -17,21 +17,32 @@ Sprite::Sprite() {
    size[1] = default_size[1];
    size[2] = default_size[2];
    select[0] = select[1] = select[2] = -1;
+   select[3] = Palette::ADD;
    
    blocks = new unsigned int**[size[0]];
    for(int i = 0; i < size[0]; i ++) {
       blocks[i] = new unsigned int*[size[1]];
       for(int j = 0; j < size[1]; j ++) {
          blocks[i][j] = new unsigned int[size[2]]();
-         for(int k = 0; k < size[2]; k ++) {
-            if(rand() % 1 == 0)
-               blocks[i][j][k] = 1;
+         if(i >= size[0] / 4 && i < size[0] * 3 / 4 && j >= size[1] / 4 && j < size[1] * 3 / 4) {
+            for(int k = size[2] / 4; k < size[2] * 3 / 4; k ++)
+               blocks[i][j][k] = Palette::DEFAULT;
          }
       }
    }
    
    glGenBuffers(1, &vbo);
    glGenBuffers(1, &vbo_color);
+   glGenBuffers(1, &cursor);
+   glGenBuffers(1, &cursor_color);
+   
+   glBindBuffer(GL_ARRAY_BUFFER, cursor);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(cursorVertices),
+                cursorVertices, GL_STATIC_DRAW);
+   
+   glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
+   glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
+                palette->getCursorColor(select[3]), GL_STATIC_DRAW);
    
    createMesh();
 }
@@ -47,33 +58,104 @@ Sprite::~Sprite() {
 }
 
 void Sprite::render(Graphics *graphics) {
-   glm::vec3 position = glm::vec3(-size[0] / 2, -size[1] / 2, -size[2] / 2);
+   glm::vec3 position;
+   for(int i = 0; i < 3; i ++)
+      position[i] = -size[i] / 2;
    graphics->renderSprite(vbo, vbo_color, numVertices, position);
+   
+   if(select[0] != -1) {
+      for(int i = 0; i < 3; i ++)
+         position[i] = select[i] - size[i] / 2;
+      graphics->renderSprite(cursor, cursor_color, 12, position);
+   }
+   
+   palette->render(graphics);
 }
 
-bool Sprite::castSelect(glm::vec3 ray, glm::vec3 direction) {
+void Sprite::update(glm::vec3 ray, glm::vec3 direction) {
+   for(int key = GLFW_KEY_1; key < GLFW_KEY_9; key ++) {
+      if(Input::keyState(key, GLFW_PRESS)) {
+         palette->setColor(key - GLFW_KEY_0);
+         glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
+         glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
+                      palette->getCursorColor(select[3]), GL_STATIC_DRAW);
+      }
+   }
+   
+   bool offset = Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_RELEASE);
+   int original[4] = { select[0], select[1], select[2], select[3] };
+   if(castRay(ray, direction, offset)) {
+      select[3] = offset ? Palette::ADD : Palette::DELETE;
+      
+      if(select[3] != original[3]) {
+         glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
+         glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
+                   palette->getCursorColor(select[3]), GL_STATIC_DRAW);
+      }
+   }
+   else {
+      select[0] = select[1] = select[2] = -1;
+   }
+   for(int i = 0; i < 3; i ++) {
+      if(select[i] != original[i]) {
+         createMesh();
+         return;
+      }
+   }
+}
+
+void Sprite::click(glm::vec3 ray, glm::vec3 direction, int action, int mods) {
+   bool offset = Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_RELEASE);
+   if(castRay(ray, direction, offset)) {
+      select[3] = offset ? Palette::ADD : Palette::DELETE;
+      
+      if(select[3] == Palette::DELETE)
+         setBlock(select[0], select[1], select[2], 0);
+      else if(select[3] == Palette::ADD)
+         setBlock(select[0], select[1], select[2], palette->getCurrentColor());
+      
+      update(ray, direction);
+   }
+}
+
+// Returns true if the ray collides, and modifies select
+bool Sprite::castRay(glm::vec3 ray, glm::vec3 direction, bool off) {
    double startDist = mag(ray);
    double dist = startDist;
    
+   int res = 0;
    double lastDist = dist;
-   while(dist <= lastDist) {
+   while(dist <= lastDist && res == 0) {
       lastDist = dist;
       ray += direction;
-      if(rayCollide(ray))
+      
+      if(off)
+         res = rayCollide(ray, direction);
+      else
+         res = rayCollide(ray);
+      
+      if(res == 2)
          return true;
+      
       dist = mag(ray);
    }
    
-   while(dist < startDist) {
+   while(res != 0) {
       ray += direction;
-      if(rayCollide(ray))
+      
+      if(off)
+         res = rayCollide(ray, direction);
+      else
+         res = rayCollide(ray);
+      
+      if(res == 2)
          return true;
-      dist = mag(ray);
    }
+   
    return false;
 }
 
-bool Sprite::rayCollide(glm::vec3 ray) {
+int Sprite::rayCollide(glm::vec3 ray) {
    int pos[3] = { static_cast<int>(floor(ray.x) + size[0] / 2),
                   static_cast<int>(floor(ray.y) + size[1] / 2),
                   static_cast<int>(floor(ray.z) + size[2] / 2) };
@@ -81,29 +163,45 @@ bool Sprite::rayCollide(glm::vec3 ray) {
    if(pos[0] < 0 || pos[0] >= size[0] ||
       pos[1] < 0 || pos[1] >= size[1] ||
       pos[2] < 0 || pos[2] >= size[2])
-      return false;
+      return 0;
    
    // If we're in bounds, check for collision
    if(blocks[pos[0]][pos[1]][pos[2]] != 0) {
       if(select[0] != pos[0] || select[1] != pos[1] || select[2] != pos[2]) {
-         blocks[pos[0]][pos[1]][pos[2]] = 2;
-         if(select[0] >= 0 && blocks[select[0]][select[1]][select[2]] != 0)
-            blocks[select[0]][select[1]][select[2]] = 1;
          for(int i = 0; i < 3; i ++)
             select[i] = pos[i];
-         createMesh();
       }
-      return true;
+      return 2;
    }
-   return false;
+   return 1;
 }
 
-void Sprite::click(glm::vec3 ray, glm::vec3 direction) {
-   if(castSelect(ray, direction)) {
-      std::cout << select[0] << ", " << select[1] << ", " << select[2] << std::endl;
-      blocks[select[0]][select[1]][select[2]] = 0;
-      createMesh();
+int Sprite::rayCollide(glm::vec3 ray, glm::vec3 lookAhead) {
+   lookAhead += ray;
+   int pos[3] = { static_cast<int>(floor(ray.x) + size[0] / 2),
+                  static_cast<int>(floor(ray.y) + size[1] / 2),
+                  static_cast<int>(floor(ray.z) + size[2] / 2) };
+   int look[3] = { static_cast<int>(floor(lookAhead.x) + size[0] / 2),
+                   static_cast<int>(floor(lookAhead.y) + size[1] / 2),
+                   static_cast<int>(floor(lookAhead.z) + size[2] / 2)};
+   
+   if(pos[0] < 0 || pos[0] >= size[0] ||
+      pos[1] < 0 || pos[1] >= size[1] ||
+      pos[2] < 0 || pos[2] >= size[2] ||
+      look[0] < 0 || look[0] >= size[0] ||
+      look[1] < 0 || look[1] >= size[1] ||
+      look[2] < 0 || look[2] >= size[2])
+      return 0;
+   
+   // If we're in bounds, check for collision
+   if(blocks[look[0]][look[1]][look[2]] != 0) {
+      if(select[0] != pos[0] || select[1] != pos[1] || select[2] != pos[2]) {
+         for(int i = 0; i < 3; i ++)
+            select[i] = pos[i];
+      }
+      return 2;
    }
+   return 1;
 }
 
 void Sprite::setBlock(int x, int y, int z, unsigned int color) {
@@ -119,7 +217,7 @@ void Sprite::createMesh() {
    for(int x = 0; x < size[0]; x ++) {
       for(int y = 0; y < size[1]; y ++) {
          for(int z = 0; z < size[2]; z ++) {
-            if(blocks[x][y][z] != 0) {
+            if(blocks[x][y][z] != 0 && (select[0] != x || select[1] != y || select[2] != z)) {
                // numVertices is automatically incremented to next empty spot
                createBlock(vertices, vertexRGB, numVertices, blocks[x][y][z], x, y, z);
             }
@@ -134,7 +232,7 @@ void Sprite::createMesh() {
    glBindBuffer(GL_ARRAY_BUFFER, vbo_color);
    glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(byte3),
                 vertexRGB, GL_STATIC_DRAW);
-   
+
    delete[] vertices;
    delete[] vertexRGB;
 }

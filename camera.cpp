@@ -39,15 +39,24 @@ void Camera::setAngles(vec2 angle) {
    position.y = dist * sin(angles.y);
    
    double dist = this->dist * cos(angles.y);
-   up = abs(dist) < 0.00001 ? vec3(0, -1, 0) : vec3(0, 1, 0);
-   position.x = dist * cos(angles.x);
-   position.z = dist * sin(angles.x);
+   if(abs(dist) < 0.00001) {
+      position.x = position.z = 0;
+      up = vec3(cos(angles.x), 0, sin(angles.x));
+      if(position.y > 0) up *= -1;
+   }
+   else {
+      up = vec3(0, 1, 0);
+      position.x = dist * cos(angles.x);
+      position.z = dist * sin(angles.x);
+   }
 }
 
 void Camera::zoom(double dx) {
    position /= dist;
    
    dist += dx;
+   
+   if(dist < 1) dist = 1;
    
    position *= dist;
 }

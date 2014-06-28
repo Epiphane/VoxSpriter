@@ -12,6 +12,7 @@
 
 #include "input.h"
 #include "camera.h"
+#include "globals.h"
 
 class Graphics {
 private:
@@ -19,10 +20,11 @@ private:
    
    Camera *camera;
    
-   GLuint programID, vertexArrayID;
+   GLuint programID, flatProgramID, vertexArrayID;
    GLuint mvpID;
    GLuint vertexBuffer, colorBuffer;
    GLuint vertexColorID, vertexPositionID;
+   GLuint flatColorID, flatWidthID;
    
    glm::mat4 projection, view;
    
@@ -33,8 +35,8 @@ public:
    Camera *getCamera() { return camera; }
    
    void render();
-   void renderSprite(int vertexBuffer, int colorBuffer, int numVertices,
-                     glm::vec3 position);
+   void renderSprite(int vertexBuffer, int colorBuffer, int numVertices, glm::vec3 position);
+   void renderSquareFlat(byte3 color, glm::vec3 topLeft, float width, float height);
    
    int getBuffer();
    
