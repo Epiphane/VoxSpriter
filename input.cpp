@@ -23,6 +23,10 @@ bool Input::keyState(int key, int state) {
    return (glfwGetKey(window, key) == state);
 }
 
+bool Input::mouseState(int button, int state) {
+   return (glfwGetMouseButton(window, button) == state);
+}
+
 void Input::tick() {
    if(window == NULL)
       return;

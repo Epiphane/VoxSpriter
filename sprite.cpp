@@ -8,7 +8,7 @@
 
 #include "sprite.h"
 
-const int default_size[3] = { 16, 26, 16 };
+const int default_size[3] = { 24, 24, 24 };
 
 Sprite::Sprite() {
    palette = new Palette();
@@ -18,18 +18,6 @@ Sprite::Sprite() {
    size[2] = default_size[2];
    select[0] = select[1] = select[2] = -1;
    select[3] = Palette::ADD;
-   
-   blocks = new unsigned int**[size[0]];
-   for(int i = 0; i < size[0]; i ++) {
-      blocks[i] = new unsigned int*[size[1]];
-      for(int j = 0; j < size[1]; j ++) {
-         blocks[i][j] = new unsigned int[size[2]]();
-         if(i >= size[0] / 4 && i < size[0] * 3 / 4 && j >= size[1] / 4 && j < size[1] * 3 / 4) {
-            for(int k = size[2] / 4; k < size[2] * 3 / 4; k ++)
-               blocks[i][j][k] = Palette::DEFAULT;
-         }
-      }
-   }
    
    glGenBuffers(1, &vbo);
    glGenBuffers(1, &vbo_color);
@@ -43,6 +31,8 @@ Sprite::Sprite() {
    glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
                 palette->getCursorColor(select[3]), GL_STATIC_DRAW);
+   
+   loadSprite("sprite.vxp");
    
    createMesh();
 }
@@ -72,6 +62,7 @@ void Sprite::render(Graphics *graphics) {
    palette->render(graphics);
 }
 
+bool spacePressed, bPressed;
 void Sprite::update(glm::vec3 ray, glm::vec3 direction) {
    for(int key = GLFW_KEY_1; key < GLFW_KEY_9; key ++) {
       if(Input::keyState(key, GLFW_PRESS)) {
@@ -81,6 +72,28 @@ void Sprite::update(glm::vec3 ray, glm::vec3 direction) {
                       palette->getCursorColor(select[3]), GL_STATIC_DRAW);
       }
    }
+   
+   if(!spacePressed && Input::keyState(GLFW_KEY_SPACE, GLFW_PRESS)) {
+      palette->incrementGrade(Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_PRESS) ? -1 : 1);
+      glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
+      glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
+                   palette->getCursorColor(select[3]), GL_STATIC_DRAW);
+      
+      spacePressed = true;
+   }
+   else if(Input::keyState(GLFW_KEY_SPACE, GLFW_RELEASE))
+      spacePressed = false;
+   
+   if(!bPressed && Input::keyState(GLFW_KEY_V, GLFW_PRESS)) {
+      palette->incrementColor(Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_PRESS) ? -1 : 1);
+      glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
+      glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
+                   palette->getCursorColor(select[3]), GL_STATIC_DRAW);
+      
+      bPressed = true;
+   }
+   else if(Input::keyState(GLFW_KEY_V, GLFW_RELEASE))
+      bPressed = false;
    
    bool offset = Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_RELEASE);
    int original[4] = { select[0], select[1], select[2], select[3] };
@@ -102,6 +115,13 @@ void Sprite::update(glm::vec3 ray, glm::vec3 direction) {
          return;
       }
    }
+}
+
+void Sprite::mouseDown(float x, float y) {
+   palette->click(x, y);
+   glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
+   glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
+                palette->getCursorColor(select[3]), GL_STATIC_DRAW);
 }
 
 void Sprite::click(glm::vec3 ray, glm::vec3 direction, int action, int mods) {
@@ -281,4 +301,113 @@ void Sprite::addFace(byte4 *vertices, byte3 *vertexRGB, int &offset,
    vertices[offset++] = byte4(p1.x, p1.y, p1.z, n);
    vertexRGB[offset] = rgb;
    vertices[offset++] = byte4(p2.x, p2.y, p2.z, 127);
+}
+
+void Sprite::saveSprite(const char *filename) {
+   //std::fstream::open(filename, std::fstream::out);
+}
+
+std::vector<int> *decodeString(char *frame) {
+   std::vector<int> *result = new std::vector<int>;
+   
+   while(0);
+   
+   return result;
+}
+
+int decodeChar(char ch) {
+   char mask[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+   for(int i = 0; i < strlen(mask); i++) {
+      if(mask[i] == ch)
+         return i;
+   }
+   
+   return -1;
+}
+
+void Sprite::loadSprite(const char *filename) {
+   std::fstream file("sprite.vxp", std::fstream::in);
+   
+   if(file.is_open())
+      std::cout << "Opened sprite" << std::endl;
+   
+   char in;
+   int start[3] = {0, 0, 0};
+   while(file >> std::noskipws >> in) {
+      if(in == 'C' && file >> std::noskipws >> in && in == '/') {
+         // Decode colors
+         int currentColor = 0, ndx = 0, rgbNdx = 0;
+         char color;
+         byte3 rgb;
+         GLubyte val = 0;
+         while(file >> std::noskipws >> color && color != ':') {
+            if(ndx == 0) {
+               if(color >= '0' && color <= '9') {
+                  val += color - '0';
+               }
+               else {
+                  val += color - 'a' + 10;
+               }
+               val <<= 4;
+               ndx = 1;
+            }
+            else { //if(ndx == 1) {
+               if(color >= '0' && color <= '9') {
+                  val += color - '0';
+               }
+               else {
+                  val += color - 'a' + 10;
+               }
+               
+               rgb[rgbNdx++] = val;
+               // Ship the color
+               if(rgbNdx == 3) {
+                  palette->setRGB(currentColor++, rgb);
+                  rgbNdx = 0;
+               }
+               
+               ndx = val = 0;
+            }
+         }
+      }
+      else if(in == 'A' && file >> std::noskipws >> in && in == '/') {
+         // Voxels
+         int current[4] = {start[0], start[1], start[2], 0};
+         while(file >> std::noskipws >> in && in != ':') {
+            int data = decodeChar(in);
+            for(int i = 0; i < 4; i ++) {
+               if((data >> (3 - i)) & 1) {
+                  file >> std::noskipws >> in;
+                  current[i] += decodeChar(in) - 32;
+               }
+            }
+            if((data >> 4) & 1) {
+               blocks[current[0]][current[1]][current[2]] = current[3];
+            }
+         }
+      }
+      else {
+         // Size
+         int ndx = 0;
+         do {
+            int data = decodeChar(in);
+            if(ndx < 3) {
+               size[ndx++] = data;
+            }
+            else {
+               start[ndx++ - 3] = data;
+            }
+         } while(file >> std::noskipws >> in && in != ':');
+         
+         blocks = new unsigned int**[size[0]];
+         for(int i = 0; i < size[0]; i ++) {
+            blocks[i] = new unsigned int*[size[1]];
+            for(int j = 0; j < size[1]; j ++) {
+               blocks[i][j] = new unsigned int[size[2]]();
+            }
+         }
+      }
+   }
+   std::cout << std::endl;
 }

@@ -10,7 +10,7 @@ out vec4 fragCoord;
 out float intensity;
 
 const vec3 sundir = normalize(vec3(0.5, 1, 0.25));
-const float ambient = 0.5;
+const float ambient = 0.7;
 
 uniform mat4 MVP;
 

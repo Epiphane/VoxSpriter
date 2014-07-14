@@ -19,6 +19,7 @@ public:
    static void tick();
    static void getMousePos(double *x, double *y);
    static bool keyState(int key, int state);
+   static bool mouseState(int button, int state);
    
    static void click(GLFWwindow *window, int button, int action, int mods);
 };

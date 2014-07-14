@@ -20,10 +20,12 @@ private:
    
    Camera *camera;
    
-   GLuint programID, flatProgramID, vertexArrayID;
+   GLuint programID, flatProgramID, spriteProgramID, vertexArrayID;
    GLuint mvpID;
    GLuint vertexBuffer, colorBuffer;
    GLuint vertexColorID, vertexPositionID;
+   GLuint flatVertexPositionID, flatVertexUVID;
+   GLuint spriteVertexBufferID, spriteUVBufferID, spriteUniformID, spriteHueID;
    GLuint flatColorID, flatWidthID;
    
    glm::mat4 projection, view;
@@ -36,7 +38,11 @@ public:
    
    void render();
    void renderSprite(int vertexBuffer, int colorBuffer, int numVertices, glm::vec3 position);
-   void renderSquareFlat(byte3 color, glm::vec3 topLeft, float width, float height);
+   void renderSquareFlat(byte3 color, glm::vec3 bottomLeft, float width, float height);
+   void renderFlatSprite(GLuint texture, glm::vec2 uvTopLeft, float uvWidth, float uvHeight, glm::vec2 bottomLeft, float width, float height);
+   void renderFlatSprite(GLuint texture, glm::vec2 uvTopLeft, float uvWidth, float uvHeight, glm::vec2 bottomLeft, float width, float height, float tint);
+   void renderText(char *string, int x, int y, int size);
+   void renderText(char *string, double x, double y, int size);
    
    int getBuffer();
    

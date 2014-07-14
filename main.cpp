@@ -2,7 +2,7 @@
 
 #include "application.h"
 
-int main( void )
+int main(int argc, char *argv[])
 {
    Application application;
    
@@ -16,6 +16,7 @@ int main( void )
    while(application.isRunning()) {
       lastTime = currentTime;
       currentTime = clock();
+      std::cout << static_cast<float>(currentTime - lastTime) / CLOCKS_PER_SEC << std::endl;
       
       // Update application
       application.update();

@@ -10,6 +10,7 @@
 #define __VoxSpriter__sprite__
 
 #include <iostream>
+#include <fstream>
 #include "palette.h"
 #include "globals.h"
 #include "graphics.h"
@@ -35,6 +36,7 @@ public:
    ~Sprite();
    
    void update(glm::vec3 ray, glm::vec3 direction);
+   void mouseDown(float x, float y);
    void click(glm::vec3 ray, glm::vec3 direction, int action, int mods);
    
    bool castRay(glm::vec3 ray, glm::vec3 direction, bool lastEmpty);
@@ -44,14 +46,17 @@ public:
    void render(Graphics *graphics);
    void render(Graphics *graphics, glm::vec3 cameraChunk);
    void createMesh();
+   
+   void saveSprite(const char *filename);
+   void loadSprite(const char *filename);
 };
 
 static const byte4 cursorVertices[] = {
-   byte4(0, 0, 1, 4), byte4(1, 1, 1, 127),
+   byte4(0, 0, 1, 4), byte4(1, 1, 1, 175),
    byte4(1, 0, 0, -4), byte4(0, 1, 0, -4),
-   byte4(1, 0, 1, 2), byte4(1, 1, 0, 127),
+   byte4(1, 0, 1, 2), byte4(1, 1, 0, 175),
    byte4(0, 0, 0, -2), byte4(0, 1, 1, -2),
-   byte4(0, 1, 1, 1), byte4(1, 1, 0, 127),
+   byte4(0, 1, 1, 1), byte4(1, 1, 0, 175),
    byte4(0, 0, 0, -1), byte4(1, 0, 1, -1)
 };
 

@@ -34,6 +34,7 @@ void Application::render() {
    graphics->endRender();
 }
 
+bool savePress = false;
 void Application::update() {
    Input::tick();
    
@@ -51,8 +52,13 @@ void Application::update() {
       dxz += angle_speed;
    if(Input::keyState(GLFW_KEY_W, GLFW_PRESS))
       dy += angle_speed;
-   if(Input::keyState(GLFW_KEY_S, GLFW_PRESS))
-      dy -= angle_speed;;
+   if(Input::keyState(GLFW_KEY_S, GLFW_PRESS)) {
+      if(savePress && Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_RELEASE)) {
+         sprite->saveSprite("sprite.vxp");
+      }
+      savePress = Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_PRESS);
+      dy -= angle_speed;
+   }
    if(Input::keyState(GLFW_KEY_Q, GLFW_PRESS))
       dz += speed;
    if(Input::keyState(GLFW_KEY_E, GLFW_PRESS))
@@ -63,6 +69,13 @@ void Application::update() {
    
    if(dz != 0)
       camera->zoom(dz);
+   
+   if(Input::mouseState(GLFW_MOUSE_BUTTON_1, GLFW_PRESS)) {
+      double x, y;
+      
+      Input::getMousePos(&x, &y);
+      sprite->mouseDown(x, y);
+   }
    
    if(Input::shouldExit())
       running = false;

@@ -7,7 +7,7 @@ Camera::Camera() {
    up = vec3(0, 1, 0);
    
    dist = 48;
-   setAngles(vec2(PI / 4, PI / 7));
+   setAngles(vec2(PI / 4, PI / 6));
 }
 
 mat4 Camera::getViewMatrix() {

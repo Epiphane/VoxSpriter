@@ -6,51 +6,153 @@
 //  Copyright (c) 2014 Thomas Steinke. All rights reserved.
 //
 
+#include <string>
+#include "texture.h"
 #include "palette.h"
 
 using namespace glm;
 
-PaletteColor *createColor(GLubyte r, GLubyte g, GLubyte b) {
-   PaletteColor *newColor = new PaletteColor;
-   newColor->RGB = byte3(r, g, b);
-   return newColor;
+byte3 HSVtoRGB(float h, float s, int v) {
+   GLubyte r, g, b;
+   
+	int i;
+	float f, p, q, t;
+	if( s == 0 ) {
+		// achromatic (grey)
+		return byte3(v, v, v);
+	}
+	h /= 60;			// sector 0 to 5
+	i = floor( h );
+	f = h - i;			// factorial posture of h
+	p = v * ( 1 - s );
+	q = v * ( 1 - s * f );
+	t = v * ( 1 - s * ( 1 - f ) );
+	switch( i ) {
+		case 0:
+			r = v;
+			g = t;
+			b = p;
+			break;
+		case 1:
+			r = q;
+			g = v;
+			b = p;
+			break;
+		case 2:
+			r = p;
+			g = v;
+			b = t;
+			break;
+		case 3:
+			r = p;
+			g = q;
+			b = v;
+			break;
+		case 4:
+			r = t;
+			g = p;
+			b = v;
+			break;
+		default:		// case 5:
+			r = v;
+			g = p;
+			b = q;
+			break;
+	}
+   
+   return byte3(r, g, b);
 }
 
 Palette::Palette() {
-   // Set up default palette
-   palette.push_back(createColor(255, 255, 255));
-   palette.push_back(createColor(50, 50, 255));
-   palette.push_back(createColor(255, 50, 50));
-   palette.push_back(createColor(50, 255, 50));
-   palette.push_back(createColor(50, 255, 255));
-   palette.push_back(createColor(255, 255, 50));
-   palette.push_back(createColor(255, 50, 255));
+   currentColor = hueSelect = 0;
    
-   currentColor = 1;
+   for(int i = 0; i < sizeof(defaultPalette) / sizeof(byte3); i ++) {
+   //   makeColor(i, defaultPalette[i]);
+   }
+   
+   currentColor = gradeSize / 2;
+   
+   SVSquareTexture = loadImage("img/saturation.png");
+   hBarTexture = loadImage("img/hue.png");
 }
 
 void Palette::render(Graphics *graphics) {
-   float squareHeight = w_height * 2 / 7;
+   vec3 pos;
+   byte3 rgb;
+   
+   float squareHeight = w_height * 8 / numColors;
    float squareWidth = squareHeight / w_width;
+   
    squareHeight /= w_height;
-   for(int i = 0; i < 7; i ++) {
-      vec3 pos;
-      pos.x = 1.0f - squareWidth * 3 / 4;
-      pos.y = -1 + i * squareHeight + squareHeight / 4;
+   for(int i = 0; i < numColors; i ++) {
+      rgb = palette[i].RGB;
+      pos.x = 1.0 - squareWidth * (gradeSize - i % gradeSize);
+      pos.y = 1.0 - (i / gradeSize + 1) * squareHeight;
       pos.z = 0;
-      graphics->renderSquareFlat(palette[i]->RGB, pos, squareWidth / 2, squareHeight / 2);
+      if(i == currentColor)
+         graphics->renderSquareFlat(rgb, pos + vec3(squareWidth / 8, squareHeight / 8, 0), squareWidth * 6 / 8, squareHeight * 6 / 8);
+      else
+         graphics->renderSquareFlat(rgb, pos, squareWidth, squareHeight);
+   }
+   
+   pos.x = 1.0 - squareWidth * (gradeSize - currentColor % gradeSize - 3.0f / 16);
+   pos.y = 1.0 - squareHeight * (currentColor / gradeSize + 13.0f / 16);
+   pos.z = 0;
+   graphics->renderSquareFlat(byte3(0, 0, 0), pos, squareWidth * 5 / 8, squareHeight * 5 / 8);
+   pos -= vec3(squareWidth / 16, squareHeight / 16, 0);
+   graphics->renderSquareFlat(byte3(255,255,255), pos, squareWidth * 3 / 4, squareHeight * 3 / 4);
+   
+   float w = squareHeight * w_height * gradeSize / 2;
+   
+   graphics->renderFlatSprite(SVSquareTexture, vec2(0, 0), 1, 1, vec2(w_width - w, 0), w, w, hueSelect);
+   
+   graphics->renderFlatSprite(hBarTexture, vec2(0, 0), 1, 1, vec2(w_width - w, w), w, 25);
+   
+   graphics->renderSquareFlat(byte3(0, 0, 0), vec3(1 - squareWidth * gradeSize, -1, 0), squareWidth * gradeSize, 2);
+}
+
+void Palette::click(int x, int y) {
+   float width = w_height * 4 * gradeSize / numColors;
+   float squareHeight = w_height * 4 / numColors;
+   
+   x -= w_width - width;
+   if(x >= 0 && x < width) {
+      if(y > w_height || y < 0) {
+         return;
+      }
+      if(y >= w_height - width) {
+         y -= w_height - width;
+         float sat = x / width;
+         int val = 255 - y * 255 / width;
+         
+         palette[currentColor].RGB = HSVtoRGB(hueSelect * 360, sat, val);
+      }
+      else if(y >= w_height - width - 25) {
+         hueSelect = x / width;
+      }
+      else if(y <= squareHeight * numColors / gradeSize) {
+         y /= squareHeight;
+         x /= squareHeight;
+         currentColor = x + y * gradeSize;
+      }
    }
 }
 
 byte3 Palette::getRGB(unsigned int colorID) {
    if(colorID == DEFAULT)
-      return byte3(200, 200, 200);
+      return byte3(127, 127, 127);
    
-   if(colorID < palette.size()) {
-      return palette[colorID]->RGB;
+   if(colorID <= numColors && colorID > 0) {
+      return palette[colorID - 1].RGB;
    }
    
    return byte3(0, 0, 0);
+}
+
+void Palette::setRGB(unsigned int colorID, byte3 rgb) {
+   if(colorID <= numColors && colorID > 0) {
+      palette[colorID - 1].RGB = rgb;
+   }
 }
 
 const byte3 BLACK = byte3(0, 0, 0);
@@ -67,8 +169,9 @@ byte3 *Palette::getCursorColor(int cursor) {
    
    if(cursor == DELETE)
       color = RED;
-   else if(cursor == ADD)
-      color = palette[currentColor]->RGB * byte3(2, 2, 2);
+   else if(cursor == ADD) {
+      color = palette[currentColor].RGB;
+   }
    
    if(color.r > 255) color.r = 255;
    if(color.g > 255) color.g = 255;
@@ -81,8 +184,61 @@ byte3 *Palette::getCursorColor(int cursor) {
    return cursorColor;
 }
 
+void Palette::makeColor(int ndx, byte3 rgb) {
+   palette[ndx].RGB = rgb;
+}
+
+vec2 getSV(float d) {
+   return vec2(0, 0);
+}
+
+void Palette::makeGradient(int ndx, float h, float s, float v) {
+   // Translate to SV circle (clip off corners)
+   if(s * s + v * v > 1.0f) {
+      float rad = atan2f(v, s);
+      s = cos(rad);
+      v = sin(rad);
+   }
+   
+   ndx *= gradeSize;
+   
+   float d = 0.25f;
+   for(int i = 0; i < gradeSize; i ++) {
+      vec2 sv = getSV(d);
+      palette[ndx++].RGB = HSVtoRGB(h, sv[0], sv[1]);
+      d += 0.5f / gradeSize;
+   }
+}
+
+void Palette::makeGradient(int ndx, float h, float sFrom, float sTo, float vFrom, float vTo) {
+   ndx *= gradeSize;
+   
+   float s = sFrom, v = vFrom;
+   
+   float ds = (sTo - sFrom) / gradeSize;
+   float dv = (vTo - vFrom) / gradeSize;
+   
+   for(int i = 0; i < gradeSize; i ++) {
+      palette[ndx++].RGB = HSVtoRGB(h, s, v);
+      s += ds;
+      v += dv;
+   }
+}
+
 void Palette::setColor(int color) {
-   if(color >= palette.size())
+   if(color >= numColors)
       return;
-   currentColor = color;
+   currentColor = (color - 1) * 4;
+}
+
+void Palette::incrementColor(int amount) {
+   currentColor += amount;
+   if(currentColor >= numColors)
+      currentColor -= numColors;
+}
+
+void Palette::incrementGrade(int amount) {
+   currentColor /= gradeSize;
+   currentColor += amount;
+   currentColor = currentColor * gradeSize + gradeSize / 2;
 }
