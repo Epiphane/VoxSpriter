@@ -8,31 +8,20 @@
 
 #include "sprite.h"
 
-const int default_size[3] = { 24, 24, 24 };
+//const int default_size[3] = { 24, 24, 24 };
 
-Sprite::Sprite() {
+Sprite::Sprite(Camera *camera) {
    palette = new Palette();
-   
-   size[0] = default_size[0];
-   size[1] = default_size[1];
-   size[2] = default_size[2];
-   select[0] = select[1] = select[2] = -1;
-   select[3] = Palette::ADD;
-   
-   glGenBuffers(1, &vbo);
-   glGenBuffers(1, &vbo_color);
-   glGenBuffers(1, &cursor);
-   glGenBuffers(1, &cursor_color);
-   
-   glBindBuffer(GL_ARRAY_BUFFER, cursor);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(cursorVertices),
-                cursorVertices, GL_STATIC_DRAW);
-   
-   glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
-   glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
-                palette->getCursorColor(select[3]), GL_STATIC_DRAW);
+   spriteRenderer = new ThreeDimension();
+   spriteRenderer->setCamera(camera);
+   spriteRenderer->setVertexFormat(GL_UNSIGNED_BYTE);
    
    loadSprite("sprite.vxp");
+   glm::vec3 position;
+   for(int i = 0; i < 3; i ++)
+      position[i] = -size[i] / 2;
+   
+   spriteRenderer->setPosition(position);
    
    createMesh();
 }
@@ -47,25 +36,14 @@ Sprite::~Sprite() {
    delete [] blocks;
 }
 
-void Sprite::render(Graphics *graphics) {
-   glm::vec3 position;
-   for(int i = 0; i < 3; i ++)
-      position[i] = -size[i] / 2;
-   graphics->renderSprite(vbo, vbo_color, numVertices, position);
-   
-   if(select[0] != -1) {
-      for(int i = 0; i < 3; i ++)
-         position[i] = select[i] - size[i] / 2;
-      graphics->renderSprite(cursor, cursor_color, 12, position);
-   }
-   
-   palette->render(graphics);
+void Sprite::render() {
+   spriteRenderer->render();
 }
 
 bool spacePressed, bPressed;
 void Sprite::update(glm::vec3 ray, glm::vec3 direction) {
-   for(int key = GLFW_KEY_1; key < GLFW_KEY_9; key ++) {
-      if(Input::keyState(key, GLFW_PRESS)) {
+   /*for(int key = GLFW_KEY_1; key < GLFW_KEY_9; key ++) {
+      if(Input::keyDown(key)) {
          palette->setColor(key - GLFW_KEY_0);
          glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
          glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
@@ -73,29 +51,29 @@ void Sprite::update(glm::vec3 ray, glm::vec3 direction) {
       }
    }
    
-   if(!spacePressed && Input::keyState(GLFW_KEY_SPACE, GLFW_PRESS)) {
-      palette->incrementGrade(Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_PRESS) ? -1 : 1);
+   if(!spacePressed && Input::keyDown(GLFW_KEY_SPACE)) {
+      palette->incrementGrade(Input::keyDown(GLFW_KEY_LEFT_SHIFT) ? -1 : 1);
       glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
       glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
                    palette->getCursorColor(select[3]), GL_STATIC_DRAW);
       
       spacePressed = true;
    }
-   else if(Input::keyState(GLFW_KEY_SPACE, GLFW_RELEASE))
+   else if(!Input::keyDown(GLFW_KEY_SPACE))
       spacePressed = false;
    
-   if(!bPressed && Input::keyState(GLFW_KEY_V, GLFW_PRESS)) {
-      palette->incrementColor(Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_PRESS) ? -1 : 1);
+   if(!bPressed && Input::keyDown(GLFW_KEY_V)) {
+      palette->incrementColor(Input::keyDown(GLFW_KEY_LEFT_SHIFT) ? -1 : 1);
       glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
       glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
                    palette->getCursorColor(select[3]), GL_STATIC_DRAW);
       
       bPressed = true;
    }
-   else if(Input::keyState(GLFW_KEY_V, GLFW_RELEASE))
+   else if(!Input::keyDown(GLFW_KEY_V))
       bPressed = false;
    
-   bool offset = Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_RELEASE);
+   bool offset = !Input::keyDown(GLFW_KEY_LEFT_SHIFT);
    int original[4] = { select[0], select[1], select[2], select[3] };
    if(castRay(ray, direction, offset)) {
       select[3] = offset ? Palette::ADD : Palette::DELETE;
@@ -114,18 +92,18 @@ void Sprite::update(glm::vec3 ray, glm::vec3 direction) {
          createMesh();
          return;
       }
-   }
+   }*/
 }
 
 void Sprite::mouseDown(float x, float y) {
-   palette->click(x, y);
+   /*palette->click(x, y);
    glBindBuffer(GL_ARRAY_BUFFER, cursor_color);
    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(byte3),
-                palette->getCursorColor(select[3]), GL_STATIC_DRAW);
+                palette->getCursorColor(select[3]), GL_STATIC_DRAW);*/
 }
 
 void Sprite::click(glm::vec3 ray, glm::vec3 direction, int action, int mods) {
-   bool offset = Input::keyState(GLFW_KEY_LEFT_SHIFT, GLFW_RELEASE);
+   bool offset = !Input::keyDown(GLFW_KEY_LEFT_SHIFT);
    if(castRay(ray, direction, offset)) {
       select[3] = offset ? Palette::ADD : Palette::DELETE;
       
@@ -232,7 +210,7 @@ void Sprite::createMesh() {
    int vertSize = size[0] * size[1] * size[2] * 12;
    byte4 *vertices = new byte4[vertSize];
    byte3 *vertexRGB = new byte3[vertSize];
-   numVertices = 0;
+   int numVertices = 0;
    
    for(int x = 0; x < size[0]; x ++) {
       for(int y = 0; y < size[1]; y ++) {
@@ -245,20 +223,15 @@ void Sprite::createMesh() {
       }
    }
    
-   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-   glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(byte4),
-                vertices, GL_STATIC_DRAW);
-   
-   glBindBuffer(GL_ARRAY_BUFFER, vbo_color);
-   glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(byte3),
-                vertexRGB, GL_STATIC_DRAW);
+   spriteRenderer->setNumVertices(numVertices);
+   spriteRenderer->bufferData(ThreeDimension::VERTEX_BUFFER, numVertices * sizeof(byte4), vertices);
+   spriteRenderer->bufferData(ThreeDimension::COLOR_BUFFER, numVertices * sizeof(byte3), vertexRGB);
 
    delete[] vertices;
    delete[] vertexRGB;
 }
 
-void Sprite::createBlock(byte4 *vertices, byte3 *vertexRGB, int &offset,
-                        unsigned int block, int x, int y, int z) {
+void Sprite::createBlock(byte4 *vertices, byte3 *vertexRGB, int &offset, unsigned int block, int x, int y, int z) {
    glm::vec3 p1 = glm::vec3(x    , y    , z + 1);
    glm::vec3 p2 = glm::vec3(x + 1, y    , z + 1);
    glm::vec3 p3 = glm::vec3(x + 1, y + 1, z + 1);

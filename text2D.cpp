@@ -108,7 +108,7 @@ void printText2D(const char * text, int x, int y, int size){
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    
 	// Draw call
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
+	glDrawArrays(GL_TRIANGLES, 0, static_cast<int>(vertices.size()) );
    
 	glDisable(GL_BLEND);
    

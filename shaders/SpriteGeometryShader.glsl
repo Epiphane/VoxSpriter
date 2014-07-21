@@ -3,20 +3,18 @@
 layout (lines) in;
 layout (triangle_strip, max_vertices=4) out;
 
-in vec3 vertexColor[];
+in vec2 UV[];
 
-out vec3 fragColor;
-out vec4 fragCoord;
-out float intensity;
-
-const vec3 sundir = normalize(vec3(0.5, 1, 0.25));
-const float ambient = 0.7;
-
-uniform mat4 MVP;
+out vec2 fragUV;
 
 void main()
 {
-   fragColor = vertexColor[0];
+   vec2 colors[4];
+   
+   colors[0] = vec2(UV[0].x, UV[1].y);
+   colors[1] = UV[1];
+   colors[2] = UV[0];
+   colors[3] = vec2(UV[1].x, UV[0].y);
    
    // Two input vertices will be the first and last vertex of the quad
    vec4 vert[4];
@@ -39,18 +37,10 @@ void main()
       vert[1].xz = vert[3].xz;
    }
    
-   // Calculate surface normal
-   vec3 normal = normalize(cross(vert[0].xyz - vert[1].xyz, vert[1].xyz - vert[2].xyz));
-   
-   // Surface intensity depends on angle of solar light
-   // This is the same for all the fragments, so we do the calculation in the geometry shader
-   float sunl = ambient + (1 - ambient) * clamp(dot(normal, sundir), 0, 1);
-   intensity = baseIntensity * sunl;
-   
    // Emit the vertices of the quad
    for(int i = 0; i < 4; i ++) {
-      fragCoord = vert[i];
-      gl_Position = MVP * vec4(vert[i].xyz, 1);
+      fragUV = colors[i];
+      gl_Position = vec4(vert[i].xyz, 1);
       EmitVertex();
    }
    EndPrimitive();

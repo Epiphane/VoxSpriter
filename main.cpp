@@ -1,5 +1,3 @@
-#include <ctime>
-
 #include "application.h"
 
 int main(int argc, char *argv[])
@@ -11,18 +9,22 @@ int main(int argc, char *argv[])
       return 1;
    
    // application loop
-   long currentTime, lastTime;
-   currentTime = clock();
+   double lastTime, elapsedTime, currentTime;
+   elapsedTime = 0;
+   lastTime = glfwGetTime();
    while(application.isRunning()) {
-      lastTime = currentTime;
-      currentTime = clock();
-      std::cout << static_cast<float>(currentTime - lastTime) / CLOCKS_PER_SEC << std::endl;
+      currentTime = glfwGetTime();
+      elapsedTime += currentTime - lastTime;
       
-      // Update application
-      application.update();
+      while(elapsedTime > SEC_PER_FRAME) {
+         // Update application
+         application.update();
+         elapsedTime -= SEC_PER_FRAME;
+      }
       
       // Render the screen
       application.render();
+      lastTime = currentTime;
    }
    
    // Clean up assets

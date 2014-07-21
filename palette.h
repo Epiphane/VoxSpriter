@@ -9,38 +9,26 @@
 #ifndef __VoxSpriter__palette__
 #define __VoxSpriter__palette__
 
-#include <iostream>
-#include <vector>
-#include <glm/glm.hpp>
 #include "globals.h"
 #include "graphics.h"
 
-struct PaletteColor {
-//   unsigned int ID;
-   byte3 RGB;
-};
+byte3 HSVtoRGB(float h, float s, int v);
 
 const int gradeSize = 7;
 const int numColors = 12 * gradeSize;
 
 class Palette {
 private:
-   PaletteColor palette[numColors];
+   byte3 palette[numColors];
    
-   void makeColor(int ndx, byte3 rgb);
-   void makeGradient(int ndx, float h, float s, float v);
    void makeGradient(int ndx, float h, float sFrom, float sTo, float vFrom, float vTo);
    int size;
    int currentColor;
-   
-   GLuint SVSquareTexture, hBarTexture;
-   float hueSelect;
 public:
    Palette();
    
-   static const unsigned int DEFAULT = UINT_MAX;
-   static const unsigned int DELETE = UINT_MAX - 1;
-   static const unsigned int ADD = UINT_MAX - 2;
+   static const unsigned int DELETE = 1;
+   static const unsigned int ADD = 2;
    
    byte3 *getCursorColor(int cursor);
    
@@ -51,9 +39,6 @@ public:
    void incrementGrade(int amount);
    byte3 getRGB(unsigned int colorID);
    void setRGB(unsigned int colorID, byte3 rgb);
-   
-   void render(Graphics *graphics);
-   void click(int x, int y);
 };
 
 const byte3 defaultPalette[] = {

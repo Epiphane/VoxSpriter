@@ -1,13 +1,13 @@
 #version 330 core
 
 // Interpolated values from the vertex shaders
-in vec2 UV;
+in vec2 fragUV;
 
 out vec4 fragColor;
 
 // Values that stay constant for the whole mesh.
-uniform sampler2D myTextureSampler;
-uniform float hue;
+uniform sampler2D textureSample;
+uniform float tintHue;
 
 vec3 hsv2rgb(vec3 c)
 {
@@ -17,10 +17,10 @@ vec3 hsv2rgb(vec3 c)
 }
 
 void main(){
-   vec4 tex = texture( myTextureSampler, UV );
-   vec3 rgb = hsv2rgb(vec3(hue, 1.0, 1.0));
+   vec4 tex = texture( textureSample, fragUV );
+   vec3 rgb = hsv2rgb(vec3(tintHue, 1.0, 1.0));
    
-   if(hue == -1) {
+   if(tintHue == -1) {
       fragColor = tex;
 	}
    else {

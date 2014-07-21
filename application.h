@@ -9,21 +9,13 @@
 #ifndef __VoxSpriter__application__
 #define __VoxSpriter__application__
 
-#include <iostream>
 #include "graphics.h"
 #include "globals.h"
 #include "input.h"
+#include "interface.h"
 #include "sprite.h"
 
 class Application {
-private:
-   Graphics *graphics;
-   Camera *camera;
-   Sprite *sprite;
-   
-   bool running;
-   
-   void computeRayAndDir(glm::vec3 *ray, glm::vec3 *direction);
 public:
    Application() :
    graphics(), running(false) {};
@@ -37,6 +29,16 @@ public:
    void click(int button, int action, int mods);
    
    bool isRunning() { return running; }
+   
+private:
+   Graphics *graphics;
+   Camera *camera;
+   Sprite *sprite;
+   UI *ui;
+   
+   bool running;
+   
+   void computeRayAndDir(glm::vec3 *ray, glm::vec3 *direction);
 };
 
 #endif /* defined(__VoxSpriter__application__) */

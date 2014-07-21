@@ -6,10 +6,12 @@
  * Constant values
  */
 
-const int w_width = 1024;
-const int w_height = 768;
+const int w_width = 512;
+const int w_height = 384;
 const char *w_title = "VoxSpriter";
-const double PI = 3.14159265;
+const float PI = 3.14159265;
+const int FRAMES_PER_SEC = 60;
+const double SEC_PER_FRAME = 1.0 / FRAMES_PER_SEC;
 
 /* 
  * Vector operators for vec3:

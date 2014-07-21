@@ -2,6 +2,7 @@
 #define ____globals__
 
 #include <iostream>
+#include <vector>
 #include <glm/glm.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -10,7 +11,9 @@
 extern const int w_width;
 extern const int w_height;
 extern const char *w_title;
-extern const double PI;
+extern const float PI;
+extern const int FRAMES_PER_SEC;
+extern const double SEC_PER_FRAME;
 
 /* Vector operators */
 bool operator== (const glm::vec3 &vecA, const glm::vec3 &vecB);
