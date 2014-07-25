@@ -24,8 +24,8 @@ Camera::Camera() {
    // Set motion callbacks
    Input::setCallback(GLFW_KEY_W, new MoveCamera(this, UP));
    Input::setCallback(GLFW_KEY_S, new MoveCamera(this, DOWN));
-   Input::setCallback(GLFW_KEY_A, new MoveCamera(this, LEFT));
-   Input::setCallback(GLFW_KEY_D, new MoveCamera(this, RIGHT));
+   Input::setCallback(GLFW_KEY_A, new MoveCamera(this, RIGHT));
+   Input::setCallback(GLFW_KEY_D, new MoveCamera(this, LEFT));
    Input::setCallback(GLFW_KEY_E, new MoveCamera(this, FORWARD));
    Input::setCallback(GLFW_KEY_Q, new MoveCamera(this, BACKWARD));
    
@@ -95,4 +95,28 @@ vec3 Camera::getDirection() {
    dir *= -1;
    
    return dir;
+}
+
+void Camera::computeRayAndDir(glm::vec3 *ray, glm::vec3 *dir) {
+   double x, y;
+   
+   mat4 invProjection = glm::inverse(vpMatrix);
+   
+   Input::getMousePos(&x, &y);
+   x = x / w_width - 1;
+   y = 1 - y / w_height;
+   
+   vec4 lRayStart_NDC(x, y, -1.0, 1.0f);
+   vec4 lRayEnd_NDC(x, y, 0.0, 1.0f);
+   
+   lRayStart_NDC = invProjection * lRayStart_NDC;
+   lRayEnd_NDC = invProjection * lRayEnd_NDC;
+   lRayStart_NDC /= lRayStart_NDC.w;
+   lRayEnd_NDC /= lRayEnd_NDC.w;
+   
+   vec4 d = glm::normalize(lRayEnd_NDC - lRayStart_NDC);
+   *dir = vec3(d.x, d.y, d.z);
+   *dir /= 10;
+   
+   *ray = position;
 }

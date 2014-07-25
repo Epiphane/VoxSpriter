@@ -34,6 +34,7 @@ public:
    ThreeDimension();
    void setCamera(Camera *_camera) { camera = _camera; }
    void setVertexFormat(GLuint _format) { vertexFormat = _format; }
+   ThreeDimension *clone();
    
    void bufferData(int bufferType, int size, void *data);
    void setPosition(glm::vec3 _position) { position = _position; }

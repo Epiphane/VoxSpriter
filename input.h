@@ -15,7 +15,7 @@ public:
       std::cout << "Unhandled event!" << std::endl;
    }
    
-   virtual void execute(double x, double y) {
+   virtual void execute(double x, double y, bool press) {
       std::cout << "Unhandled event!" << std::endl;
    }
 };
@@ -24,9 +24,11 @@ class Input {
 public:
    static void clear();
    static void init(GLFWwindow *_window);
+   static void addMod(int key);
    static bool shouldExit();
    
    static void tick();
+   static void setModCallback(int mod, int key, Command *callBack);
    static void setCallback(int key, Command *callBack);
    static void setMouseCallback(Command *callBack);
    
@@ -35,6 +37,9 @@ public:
    static bool mouseState(int button, int state);
    
    static void click(GLFWwindow *window, int button, int action, int mods);
+   
+private:
+   static bool mouseDown;
 };
 
 #endif

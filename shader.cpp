@@ -149,6 +149,10 @@ void Program::buffer(int bufferId, int size, void *data) {
    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 }
 
+// ------------------------
+// -----Three Dimension----
+// ------------------------
+
 ThreeDimension::ThreeDimension() {
    if(!initialized) {
       programID = LoadShaders("shaders/3DVertexShader.glsl", "shaders/3DGeometryShader.glsl", "shaders/3DFragmentShader.glsl");
@@ -167,6 +171,15 @@ ThreeDimension::ThreeDimension() {
    
    glGenBuffers(1, &vertexBuffer);
    glGenBuffers(1, &colorBuffer);
+}
+
+ThreeDimension *ThreeDimension::clone() {
+   ThreeDimension *newProgram = new ThreeDimension();
+   newProgram->vertexFormat = vertexFormat;
+   newProgram->position = position;
+   newProgram->camera = camera;
+   
+   return newProgram;
 }
 
 void ThreeDimension::bufferData(int bType, int size, void *data) {
@@ -214,6 +227,10 @@ void ThreeDimension::render() {
    glDisableVertexAttribArray(vertexPosition);
    glDisableVertexAttribArray(vertexColor);
 }
+
+// -----------------------
+// -----Image Program-----
+// -----------------------
 
 ImageProgram::ImageProgram() {
    if(!initialized) {

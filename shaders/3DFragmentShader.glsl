@@ -14,6 +14,8 @@ const float fogdensity = 0.0000003;
 void main()
 {
    vec4 color;
+   if(fragCoord.w != 0) {
+   
    if((int(fragCoord.w) & 1) == 1 && fragCoord.w > 0)
       color = vec4(fragColor.x / 255.0, fragColor.y / 255.0, fragColor.z / 255.0, 1);
    else
@@ -23,4 +25,8 @@ void main()
    float fog = clamp(exp(-fogdensity * z * z), 0.2, 1);
    
    fragmentColor = intensity * mix(fogcolor, color, fog);
+   }
+   else {
+      fragmentColor = vec4(fragColor.xyz / 255.0, 1);
+   }
 }

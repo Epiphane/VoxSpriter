@@ -17,10 +17,26 @@ Palette::Palette() {
    currentColor = 0;
    
    for(int i = 0; i < sizeof(defaultPalette) / sizeof(byte3); i ++) {
-      makeColor(i, defaultPalette[i]);
+      setColor(i, defaultPalette[i]);
    }
    
    currentColor = gradeSize / 2;
+}
+
+byte3 *Palette::getColorMesh(int colorID) {
+   byte3 *colorMesh = new byte3[12];
+   byte3 color;
+   
+   if(colorID == DELETE)
+      color = RED;
+   else
+      color = palette[colorID];
+   
+   for(int i = 0; i < 12; i ++) {
+      colorMesh[i] = color;
+   }
+   
+   return colorMesh;
 }
 
 void Palette::makeGradient(int ndx, float h, float sFrom, float sTo, float vFrom, float vTo) {
@@ -38,7 +54,26 @@ void Palette::makeGradient(int ndx, float h, float sFrom, float sTo, float vFrom
    }
 }
 
+void Palette::setCurrent(int _current) {
+   if(currentColor != _current) {
+      currentColor = _current;
+      send(PALETTE_SELECT_CHANGE, currentColor);
+   }
+}
+
+void Palette::setCurrentColor(byte3 rgb) {
+   setColor(currentColor, rgb);
+}
+
+void Palette::setColor(int colorID, byte3 rgb) {
+   if(palette[colorID] != rgb) {
+      palette[colorID] = rgb;
+      send(PALETTE_COLOR_CHANGE, colorID);
+   }
+}
+
 byte3 HSVtoRGB(float h, float s, int v) {
+   h *= 360;
    GLubyte r, g, b;
    
 	int i;
@@ -87,4 +122,8 @@ byte3 HSVtoRGB(float h, float s, int v) {
 	}
    
    return byte3(r, g, b);
+}
+
+glm::vec3 RGBtoHSV(byte3 rgb) {
+   return glm::vec3(0, 0, 0);
 }

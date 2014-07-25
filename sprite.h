@@ -15,48 +15,78 @@
 #include "camera.h"
 #include "input.h"
 
-class Sprite {
+class Sprite : public Observer {
 public:
-   Sprite(Camera *camera);
+   Sprite(Camera *camera, Palette *palette);
    ~Sprite();
+   void setBlock(int x, int y, int z, unsigned int color);
    
    void update(glm::vec3 ray, glm::vec3 direction);
-   void mouseDown(float x, float y);
-   void click(glm::vec3 ray, glm::vec3 direction, int action, int mods);
    
    bool castRay(glm::vec3 ray, glm::vec3 direction, bool lastEmpty);
-   bool castSelect(glm::vec3 ray, glm::vec3 direction);
-   void setBlock(int x, int y, int z, unsigned int color);
    
    void render();
    void createMesh();
+   void colorCursor();
+   
+   void notify(Message message, int data);
    
    void saveSprite(const char *filename);
-   void loadSprite(const char *filename);
+   void loadSprite(const char *filename, bool clear = true);
    
 private:
    ThreeDimension *spriteRenderer;
+   ThreeDimension *cursorRenderer;
    
    unsigned int ***blocks;
    Palette *palette;
+   Camera *camera;
    
    int size[3], select[4];
-   int rayCollide(glm::vec3 ray);
-   int rayCollide(glm::vec3 ray, glm::vec3 lookAhead);
+   int rayCollide(glm::vec3 ray, glm::vec3 lookAhead, bool pastHalf = false);
    
    void createBlock(byte4 *vertices, byte3 *vertexRGB, int &offset,
                     unsigned int block, int x, int y, int z);
    void addFace(byte4 *vertices, byte3 *vertexRGB, int &offset,
                 glm::vec3 p1, glm::vec3 p2, byte3 rgb, GLbyte n);
-};
-
-static const byte4 cursorVertices[] = {
-   byte4(0, 0, 1, 4), byte4(1, 1, 1, 150),
-   byte4(1, 0, 0, -4), byte4(0, 1, 0, -4),
-   byte4(1, 0, 1, 2), byte4(1, 1, 0, 150),
-   byte4(0, 0, 0, -2), byte4(0, 1, 1, -2),
-   byte4(0, 1, 1, 1), byte4(1, 1, 0, 150),
-   byte4(0, 0, 0, -1), byte4(1, 0, 1, -1)
+   
+   static bool shiftPressed;
+   class ShiftCommand : public Command {
+   public:
+      ShiftCommand(Sprite *_parent) : parent(_parent) {};
+      
+      virtual void execute(bool press) { shiftPressed = press; parent->colorCursor(); }
+   private:
+      Sprite *parent;
+   };
+   
+   class SaveCommand : public Command {
+   public:
+      SaveCommand(Sprite *_parent) : parent(_parent) {};
+      
+      virtual void execute(bool press) { if(press) parent->saveSprite("/Users/ThomasSteinke/sprite.vxp"); }
+   private:
+      Sprite *parent;
+   };
+   
+   class LoadCommand : public Command {
+   public:
+      LoadCommand(Sprite *_parent) : parent(_parent) {};
+      
+      virtual void execute(bool press) { if(press) parent->loadSprite("/Users/ThomasSteinke/sprite.vxp"); }
+   private:
+      Sprite *parent;
+   };
+   
+   class ClickCommand : public Command {
+   public:
+      ClickCommand(Sprite *_parent) : parent(_parent) {};
+      
+      virtual void execute(double x, double y, bool press);
+   private:
+      Sprite *parent;
+      int oldPosition[4];
+   };
 };
 
 #endif /* defined(__VoxSpriter__sprite__) */

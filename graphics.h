@@ -25,14 +25,9 @@ public:
    
 private:
    GLFWwindow *window;
-   
    Camera *camera;
    
-   GLuint flatProgramID, vertexArrayID;
-   GLuint mvpID;
-   GLuint vertexBuffer, colorBuffer;
-   GLuint spriteVertexBufferID, spriteUVBufferID;
-   GLuint flatColorID, flatWidthID;
+   GLuint vertexArrayID;
    
    bool valid = false;
 };

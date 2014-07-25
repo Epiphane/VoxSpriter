@@ -25,20 +25,16 @@ public:
    void render();
    void quit();
    
-   void mouseMove(double x, double y);
-   void click(int button, int action, int mods);
-   
    bool isRunning() { return running; }
    
 private:
    Graphics *graphics;
    Camera *camera;
+   Palette *palette;
    Sprite *sprite;
    UI *ui;
    
    bool running;
-   
-   void computeRayAndDir(glm::vec3 *ray, glm::vec3 *direction);
 };
 
 #endif /* defined(__VoxSpriter__application__) */

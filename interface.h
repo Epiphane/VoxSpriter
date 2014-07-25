@@ -25,10 +25,10 @@ public:
    static const int COLOR_ELEMENT = 1;
    static const int IMAGE_ELEMENT = 2;
    
-   void click(double x, double y);
+   virtual void click(double x, double y);
    
    UIElement *init(float _x, float _y, float _z, float _w, float _h, UI *_callBackUI, elementCallBack *callback);
-   
+   void setPosition(float _x, float _y) { x = _x; y = _y; }
 protected:
    float x, y, z, w, h;
    UI *callBackUI;
@@ -40,10 +40,23 @@ public:
    virtual int elementType() { return COLOR_ELEMENT; }
    
    void setColor(byte3 _color) { color = _color; }
-   void pushVertices(glm::vec4 *vertices, byte3 *colors, int &off);
+   virtual void pushVertices(glm::vec4 *vertices, byte3 *colors, int &off);
    
-private:
+protected:
    byte3 color;
+};
+
+class PaletteElement : public ColorElement {
+private:
+   bool current;
+public:
+   PaletteElement() : current(false) {};
+   
+   void click(double x, double y);
+   
+   bool isCurrent() { return current; }
+   void setCurrent(bool _current) { current = _current; }
+   void pushVertices(glm::vec4 *vertices, byte3 *colors, int &off);
 };
 
 class ImageElement : public UIElement {
@@ -57,20 +70,21 @@ private:
    float imageX, imageY, imageW, imageH;
 };
 
-class UI {
+class UI : public Observer {
 public:
    constexpr static const double BAR_X = 0.5;
    constexpr static const double BAR_Y = -1;
-   constexpr static const double BAR_Z = 0;
    constexpr static const double BAR_W = 0.5;
    constexpr static const double BAR_H = 2;
+   constexpr static const double HUE_H = 0.1;
    
    UI();
-   void setPalette(Palette *_palette) { palette = _palette; }
+   void setPalette(Palette *_palette);
    
    void buildVertices();
    void render();
    
+   virtual void notify(Message message, int data);
 private:
    ThreeDimension *colorRenderer;
    ImageProgram *imageRenderer;
@@ -83,9 +97,14 @@ private:
    public:
       ClickInterfaceCommand(UI *_parent) : parent(_parent) {}
       
-      virtual void execute(double x, double y);
+      virtual void execute(double x, double y, bool press);
    };
    
+   float hue, sat, val;
+   PaletteElement *paletteElements;
+   int selectedPalette;
+   
+   ImageElement *satValElem;
    std::vector<UIElement *> elements;
    GLuint numColorElements, numImageElements;
 
@@ -95,6 +114,7 @@ private:
    // Callbacks
    static void selectHue(UI *ui, double x, double y);
    static void selectSatVal(UI *ui, double x, double y);
+   static void selectElement(UI *ui, double x, double y);
 };
 
 #endif /* defined(__VoxSpriter__interface__) */

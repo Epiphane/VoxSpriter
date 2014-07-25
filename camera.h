@@ -31,6 +31,7 @@ public:
    glm::mat4 getVPMatrix() { return vpMatrix; }
    glm::vec3 getDirection();
    
+   void computeRayAndDir(glm::vec3 *ray, glm::vec3 *direction);
 private:
    glm::vec3 position;
    glm::vec2 angles;
@@ -38,16 +39,6 @@ private:
    double dist;
    
    glm::mat4 vpMatrix;
-   
-   class MoveCamera : public Command {
-   private:
-      Camera *parent;
-      int ndx;
-   public:
-      MoveCamera(Camera *_parent, int _ndx) : parent(_parent), ndx(_ndx) {}
-      
-      virtual void execute(bool press);
-   };
    
    // Movement directions
    static const int UP = 0;
@@ -58,6 +49,16 @@ private:
    static const int BACKWARD = 5;
    
    float movement[6];
+   
+   class MoveCamera : public Command {
+   private:
+      Camera *parent;
+      int ndx;
+   public:
+      MoveCamera(Camera *_parent, int _ndx) : parent(_parent), ndx(_ndx) {}
+      
+      virtual void execute(bool press);
+   };
 };
 
 #endif /* defined(__Voxels__camera__) */

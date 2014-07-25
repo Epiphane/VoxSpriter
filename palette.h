@@ -10,35 +10,34 @@
 #define __VoxSpriter__palette__
 
 #include "globals.h"
+#include "observer.h"
 #include "graphics.h"
 
 byte3 HSVtoRGB(float h, float s, int v);
+glm::vec3 RGBtoHSV(byte3 rgb);
 
 const int gradeSize = 7;
 const int numColors = 12 * gradeSize;
 
-class Palette {
-private:
-   byte3 palette[numColors];
-   
-   void makeGradient(int ndx, float h, float sFrom, float sTo, float vFrom, float vTo);
-   int size;
-   int currentColor;
+class Palette : public Observed {
 public:
+   static const int DELETE = UINT_MAX;
+   
    Palette();
    
-   static const unsigned int DELETE = 1;
-   static const unsigned int ADD = 2;
+   int getCurrent() { return currentColor; }
+   byte3 getCurrentColor() { return palette[currentColor]; }
+   byte3 getColor(int colorID) { return palette[colorID]; }
+   byte3* getColorMesh(int colorID);
    
-   byte3 *getCursorColor(int cursor);
+   void setCurrent(int _current);
+   void setCurrentColor(byte3 rgb);
+   void setColor(int colorID, byte3 rgb);
+private:
+   byte3 palette[numColors];
+   int currentColor;
    
-   byte3 getCurrentColorRGB();
-   int getCurrentColor() { return currentColor + 1; }
-   void setColor(int color);
-   void incrementColor(int amount);
-   void incrementGrade(int amount);
-   byte3 getRGB(unsigned int colorID);
-   void setRGB(unsigned int colorID, byte3 rgb);
+   void makeGradient(int ndx, float h, float sFrom, float sTo, float vFrom, float vTo);
 };
 
 const byte3 defaultPalette[] = {
