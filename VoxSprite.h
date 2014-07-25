@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Thomas Steinke. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+#include <Cocoa/Cocoa.h>
 
 @interface VoxSprite : NSDocument
 

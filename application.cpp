@@ -23,6 +23,11 @@ int Application::init() {
    return 1;
 }
 
+bool Application::load(const char *data, int length) {
+   return sprite->loadSprite(data, length);
+   //return true;
+}
+
 void Application::render() {
    graphics->beginRender();
    
@@ -48,4 +53,38 @@ void Application::update() {
 void Application::quit() {
    graphics->terminate();
    sprite->~Sprite();
+}
+
+int openApplication(const char *data, unsigned long length) {
+   Application application;
+   
+   // Initialize application
+   if(application.init())
+      return 0;
+   
+   application.load(data, static_cast<int>(length));
+   
+   // application loop
+   double lastTime, elapsedTime, currentTime;
+   elapsedTime = 0;
+   lastTime = glfwGetTime();
+   while(application.isRunning()) {
+      currentTime = glfwGetTime();
+      elapsedTime += currentTime - lastTime;
+      
+      while(elapsedTime > SEC_PER_FRAME) {
+         // Update application
+         application.update();
+         elapsedTime -= SEC_PER_FRAME;
+      }
+      
+      // Render the screen
+      application.render();
+      lastTime = currentTime;
+   }
+   
+   // Clean up assets
+   application.quit();
+   
+   return 1;
 }

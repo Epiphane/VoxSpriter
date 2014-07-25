@@ -15,12 +15,15 @@
 #include "interface.h"
 #include "sprite.h"
 
+int openApplication(const char *data, unsigned long length);
+
 class Application {
 public:
    Application() :
    graphics(), running(false) {};
    
    int init();
+   bool load(const char *data, int length);
    void update();
    void render();
    void quit();

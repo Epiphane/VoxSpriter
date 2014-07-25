@@ -41,8 +41,8 @@ Sprite::Sprite(Camera *_camera, Palette *_palette) {
    cursorRenderer->bufferData(ThreeDimension::VERTEX_BUFFER, 12 * sizeof(byte4), cursorVertices);
    colorCursor();
    
-   //loadSprite("sprite.vxp");
-   loadSprite(0, false);
+   size[0] = 0;
+   loadSprite(0, 0);
    
    vec3 position;
    for(int i = 0; i < 3; i ++)
@@ -52,7 +52,6 @@ Sprite::Sprite(Camera *_camera, Palette *_palette) {
    
    Input::setCallback(GLFW_KEY_LEFT_SHIFT, new ShiftCommand(this));
    Input::setModCallback(GLFW_KEY_LEFT_SUPER, GLFW_KEY_S, new SaveCommand(this));
-   Input::setModCallback(GLFW_KEY_LEFT_SUPER, GLFW_KEY_O, new LoadCommand(this));
    Input::setMouseCallback(new ClickCommand(this));
    
    createMesh();
@@ -411,8 +410,8 @@ int decodeChar(char ch) {
    return -1;
 }
 
-void Sprite::loadSprite(const char *filename, bool clear) {
-   if(clear) {
+bool Sprite::loadSprite(const char *data, int length) {
+   if(size[0]) {
       for(int i = 0; i < size[0]; i ++) {
          for(int j = 0; j < size[1]; j ++) {
             delete [] blocks[i][j];
@@ -422,7 +421,7 @@ void Sprite::loadSprite(const char *filename, bool clear) {
       delete [] blocks;
    }
    
-   if(filename == 0) {
+   if(data == 0) {
       // Default: just set up size
       for(int i = 0; i < 3; i ++)
          size[i] = 24;
@@ -435,23 +434,24 @@ void Sprite::loadSprite(const char *filename, bool clear) {
          }
       }
       
-      return;
+      return true;
    }
    
-   std::fstream file(filename, std::fstream::in);
-   
-   if(file.is_open())
-      std::cout << "Opened " << filename << std::endl;
-   
    char in;
+   int dNdx = 0;
    int start[3] = {0, 0, 0};
-   while(file >> std::noskipws >> in) {
-      if(in == 'C' && file >> std::noskipws >> in && in == '/') {
+   while(dNdx < length) {
+      in = data[dNdx++];
+      if(in == 'C' && data[dNdx++] == '/') {
          // Decode colors
          int currentColor = 0, rgbNdx = 0;
          char color;
          byte3 rgb;
-         while(file >> std::noskipws >> color && color != ':') {
+         while(dNdx < length) {
+            color = data[dNdx++];
+            if(color == ':')
+               break;
+            
             rgb[rgbNdx++] = color;
             // Ship the color
             if(rgbNdx == 3) {
@@ -460,14 +460,14 @@ void Sprite::loadSprite(const char *filename, bool clear) {
             }
          }
       }
-      else if(in == 'A' && file >> std::noskipws >> in && in == '/') {
+      else if(in == 'A' && data[dNdx++] == '/') {
          // Voxels
          int current[4] = {start[0], start[1], start[2], 0};
-         while(file >> std::noskipws >> in && in != ':') {
-            int data = in;//decodeChar(in);
+         while(dNdx < length && (in = data[dNdx++]) && in != ':') {
+            int tData = in;
             for(int i = 0; i < 4; i ++) {
-               if(data & (1 << i)) {
-                  file >> std::noskipws >> in;
+               if(tData & (1 << i)) {
+                  in = data[dNdx++];
                   current[i] += in;
                }
             }
@@ -481,7 +481,7 @@ void Sprite::loadSprite(const char *filename, bool clear) {
             if(ndx < 3) {
                size[ndx++] = in;
             }
-         } while(file >> std::noskipws >> in && in != ':');
+         } while((in = data[dNdx++]) && in != ':');
          
          blocks = new unsigned int**[size[0]];
          for(int i = 0; i < size[0]; i ++) {
@@ -492,4 +492,6 @@ void Sprite::loadSprite(const char *filename, bool clear) {
          }
       }
    }
+   
+   return true;
 }

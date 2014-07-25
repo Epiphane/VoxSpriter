@@ -32,7 +32,7 @@ public:
    void notify(Message message, int data);
    
    void saveSprite(const char *filename);
-   void loadSprite(const char *filename, bool clear = true);
+   bool loadSprite(const char *data, int length);
    
 private:
    ThreeDimension *spriteRenderer;
@@ -65,15 +65,6 @@ private:
       SaveCommand(Sprite *_parent) : parent(_parent) {};
       
       virtual void execute(bool press) { if(press) parent->saveSprite("/Users/ThomasSteinke/sprite.vxp"); }
-   private:
-      Sprite *parent;
-   };
-   
-   class LoadCommand : public Command {
-   public:
-      LoadCommand(Sprite *_parent) : parent(_parent) {};
-      
-      virtual void execute(bool press) { if(press) parent->loadSprite("/Users/ThomasSteinke/sprite.vxp"); }
    private:
       Sprite *parent;
    };

@@ -6,9 +6,9 @@
 //  Copyright (c) 2014 Thomas Steinke. All rights reserved.
 //
 
-#include "application.h"
-#include <Cocoa/Cocoa.h>
+#import "application.h"
 #import "VoxSprite.h"
+#import <Cocoa/Cocoa.h>
 
 @implementation VoxSprite
 
@@ -19,15 +19,6 @@
     }
     return self;
 }
-
-/*
-- (NSString *)windowNibName
-{
-    // Override returning the nib file name of the document
-    // If you need to use a subclass of NSWindowController or if your document supports multiple NSWindowControllers, you should remove this method and override -makeWindowControllers instead.
-    return <#nibName#>;
-}
-*/
 
 - (void)windowControllerDidLoadNib:(NSWindowController *)aController {
     [super windowControllerDidLoadNib:aController];
@@ -44,6 +35,8 @@
 }
 
 - (BOOL)readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)outError {
+   NSLog(@"HERE WE GO CAPTAIN");
+   
    // Insert code here to read your document from the given data of the specified type. If outError != NULL, ensure that you create and set an appropriate error when returning NO.
    // You can also choose to override -readFromFileWrapper:ofType:error: or -readFromURL:ofType:error: instead.
    // If you override either of these, you should also override -isEntireFileLoaded to return NO if the contents are lazily loaded.
@@ -51,35 +44,9 @@
       *outError = [NSError errorWithDomain:NSOSStatusErrorDomain code:unimpErr userInfo:nil];
    }
    
-   Application application;
+   const char *dataStr = (const char *) [data bytes];
    
-   // Initialize application
-   if(application.init())
-      return 1;
-   
-   // application loop
-   double lastTime, elapsedTime, currentTime;
-   elapsedTime = 0;
-   lastTime = glfwGetTime();
-   while(application.isRunning()) {
-      currentTime = glfwGetTime();
-      elapsedTime += currentTime - lastTime;
-      
-      while(elapsedTime > SEC_PER_FRAME) {
-         // Update application
-         application.update();
-         elapsedTime -= SEC_PER_FRAME;
-      }
-      
-      // Render the screen
-      application.render();
-      lastTime = currentTime;
-   }
-   
-   // Clean up assets
-   application.quit();
-   
-   return YES;
+   return openApplication(dataStr, [data length]);
 }
 
 + (BOOL)autosavesInPlace {
