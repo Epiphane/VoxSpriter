@@ -7,6 +7,7 @@
 //
 
 #include "sprite.h"
+#import <Cocoa/Cocoa.h>
 
 //const int default_size[3] = { 24, 24, 24 };
 
@@ -52,6 +53,7 @@ Sprite::Sprite(Camera *_camera, Palette *_palette) {
    
    Input::setCallback(GLFW_KEY_LEFT_SHIFT, new ShiftCommand(this));
    Input::setModCallback(GLFW_KEY_LEFT_SUPER, GLFW_KEY_S, new SaveCommand(this));
+   Input::setModCallback(GLFW_KEY_LEFT_SUPER, GLFW_KEY_O, new LoadCommand(this));
    Input::setMouseCallback(new ClickCommand(this));
    
    createMesh();
@@ -136,6 +138,9 @@ void Sprite::ClickCommand::execute(double x, double y, bool press) {
 
 // Returns true if the ray collides, and modifies select
 bool Sprite::castRay(vec3 ray, vec3 direction, bool off) {
+   for(int i = 0; i < 3; i ++)
+      select[i] = -1;
+   
    double startDist = mag(ray);
    double dist = startDist;
    
@@ -156,13 +161,18 @@ bool Sprite::castRay(vec3 ray, vec3 direction, bool off) {
       dist = mag(ray);
    }
    
-   while(res != 2) {
+   bool pastHalf = (res == 1);
+   while(res != 2 && dist < startDist) {
       ray += direction;
       
       if(off)
-         res = rayCollide(ray, direction, true);
+         res = rayCollide(ray, direction, pastHalf);
       else
-         res = rayCollide(ray, vec3(0, 0, 0), true);
+         res = rayCollide(ray, vec3(0, 0, 0), pastHalf);
+      
+      pastHalf = (res == 1);
+      
+      dist = mag(ray);
    }
    
    return true;
@@ -318,6 +328,7 @@ void Sprite::addFace(byte4 *vertices, byte3 *vertexRGB, int &offset,
 // FILE STUFF
 // -----------------------
 
+static NSString *origFileName = @"sprite";
 // Can encode -32 to 31. Don't overflow pls
 char *encode(std::vector<int> data) {
    //char mask[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -330,7 +341,27 @@ char *encode(std::vector<int> data) {
    return result;
 }
 
+void Sprite::saveSprite() {
+   NSSavePanel *panel = [NSSavePanel savePanel];
+   
+   [panel setNameFieldStringValue:origFileName];
+   [panel setAllowedFileTypes:[NSArray arrayWithObject:@"vxp"]];
+   [panel beginWithCompletionHandler:^(NSInteger result){
+    if (result == NSFileHandlingPanelOKButton) {
+    NSURL*  theFile = [panel URL];
+    NSString *fileName = [NSString stringWithFormat:@"%@", theFile];
+    const char *ofName = [fileName cStringUsingEncoding:NSASCIIStringEncoding];
+    saveSprite(ofName + 7);
+    }
+    }];
+}
+
 void Sprite::saveSprite(const char *filename) {
+   origFileName = [NSString stringWithUTF8String:filename];
+   NSArray *parts = [origFileName componentsSeparatedByString:@"/"];
+   origFileName = [parts lastObject];
+   NSLog(@"%@", origFileName);
+   
    std::fstream outputFile(filename, std::fstream::out);
    
    if(outputFile.is_open())
@@ -408,6 +439,24 @@ int decodeChar(char ch) {
    }
    
    return -1;
+}
+
+bool Sprite::loadSprite() {
+   NSOpenPanel *panel = [NSOpenPanel openPanel];
+   [panel beginWithCompletionHandler:^(NSInteger result) {
+    if(result == NSFileHandlingPanelOKButton) {
+    NSURL *docURL = [[panel URLs] objectAtIndex:0];
+    NSData *data = [NSData dataWithContentsOfURL:docURL];
+    origFileName = [NSString stringWithFormat:@"%@", docURL];
+    NSArray *parts = [origFileName componentsSeparatedByString:@"/"];
+    origFileName = [parts lastObject];
+    NSLog(@"%@", origFileName);
+    const char *dataStr = (const char *) [data bytes];
+    loadSprite(dataStr, static_cast<int>([data length]));
+    }
+    }];
+   
+   return true;
 }
 
 bool Sprite::loadSprite(const char *data, int length) {

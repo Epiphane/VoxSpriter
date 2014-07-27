@@ -31,7 +31,9 @@ public:
    
    void notify(Message message, int data);
    
+   void saveSprite();
    void saveSprite(const char *filename);
+   bool loadSprite();
    bool loadSprite(const char *data, int length);
    
 private:
@@ -64,7 +66,16 @@ private:
    public:
       SaveCommand(Sprite *_parent) : parent(_parent) {};
       
-      virtual void execute(bool press) { if(press) parent->saveSprite("/Users/ThomasSteinke/sprite.vxp"); }
+      virtual void execute(bool press) { if(press) parent->saveSprite(); }
+   private:
+      Sprite *parent;
+   };
+   
+   class LoadCommand : public Command {
+   public:
+      LoadCommand(Sprite *_parent) : parent(_parent) {};
+      
+      virtual void execute(bool press) { if(press) parent->loadSprite(); }
    private:
       Sprite *parent;
    };
