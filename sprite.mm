@@ -104,6 +104,9 @@ void Sprite::notify(Message message, int data) {
 }
 
 void Sprite::ClickCommand::execute(double x, double y, bool press) {
+   if(x >= 0.4)
+      return;
+   
    if(press) {
       vec3 ray, direction;
       parent->camera->computeRayAndDir(&ray, &direction);

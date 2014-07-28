@@ -124,6 +124,41 @@ byte3 HSVtoRGB(float h, float s, int v) {
    return byte3(r, g, b);
 }
 
-glm::vec3 RGBtoHSV(byte3 rgb) {
-   return glm::vec3(0, 0, 0);
+using namespace glm;
+
+vec3 RGBtoHSV(byte3 rgb) {
+   vec3 hsv;
+   double min, max, delta;
+   
+   min = rgb.r < rgb.g ? rgb.r : rgb.g;
+   min = min   < rgb.b ? min   : rgb.b;
+   
+   max = rgb.r > rgb.g ? rgb.r : rgb.g;
+   max = max   > rgb.b ? max   : rgb.b;
+   
+   hsv.b = max;                                // v
+   delta = max - min;
+   if( max > 0.0 ) { // NOTE: if Max is == 0, this divide would cause a crash
+      hsv.g = (delta / max);                  // s
+   } else {
+      // if max is 0, then r = g = b = 0
+      // s = 0, v is undefined
+      hsv.g = 0.0;
+      hsv.r = NAN;                            // its now undefined
+      return hsv;
+   }
+   if( rgb.r >= max )                           // > is bogus, just keeps compilor happy
+      hsv.r = ( rgb.g - rgb.b ) / delta;        // between yellow & magenta
+   else
+      if( rgb.g >= max )
+         hsv.r = 2.0 + ( rgb.b - rgb.r ) / delta;  // between cyan & yellow
+      else
+         hsv.r = 4.0 + ( rgb.r - rgb.g ) / delta;  // between magenta & cyan
+   
+   hsv.r /= 6.0;
+   
+   if( hsv.r < 0.0 )
+      hsv.r += 1.0;
+   
+   return hsv;
 }

@@ -27,7 +27,7 @@ UI::UI() {
    square[0] = BAR_W / gradeSize;
    square[1] = square[0] * w_width / w_height;
    for(int i = 0; i < numColors; i ++) {
-      paletteElements[i].init(BAR_X + (i % gradeSize) * square[0], 1 - (i / gradeSize + 1) * square[1], 0.1, square[0], square[1], this, UI::selectElement);
+      paletteElements[i].init(BAR_X + (i % gradeSize) * square[0], 1 - (i / gradeSize + 2) * square[1], 0.1, square[0], square[1], this, UI::selectElement);
       elements.push_back(&paletteElements[i]);
       numColorElements ++;
    }
@@ -39,7 +39,10 @@ UI::UI() {
    
    addImageElement(BAR_X, BAR_Y, 0.2, BAR_W, BAR_W * w_width / w_height, vec2(0, 0), vec2(100.0 / 128, 100.0 / 128), UI::selectSatVal);
    addImageElement(BAR_X, BAR_Y + BAR_W * w_width / w_height, 0.2, BAR_W, HUE_H, vec2(0, 100.0 / 128), vec2(100.0 / 128, 101.0 / 128), UI::selectHue);
-
+   
+   float textH = 12.0 / 128;
+   addImageElement(BAR_X, 1 - textH, 0.2, BAR_W, square[1], vec2(0, 116.0 / 128), vec2(100.0 / 128, 1), 0);
+   
    // Add satValElem
    {
       float w = 5;
@@ -52,7 +55,18 @@ UI::UI() {
       sat = val = 0;
    }
    
-   hue = 0;
+   // Add hueElem
+   {
+      float w = 5;
+      hueElem = new ImageElement();
+      hueElem->init(BAR_X, BAR_Y + BAR_W * w_width / w_height, 0.3, w / w_width, HUE_H, this, 0);
+      hueElem->setUV(100.0 / 128, 100.0 / 128, (100.0 + w) / 128, (100.0 + w) / 128);
+      elements.push_back(hueElem);
+      numImageElements ++;
+      
+      hue = 0;
+   }
+   
    imageRenderer->setTint(hue);
 
    Input::setMouseCallback(new ClickInterfaceCommand(this));
@@ -88,6 +102,16 @@ void UI::notify(Message message, int data) {
       
       selectedPalette = palette->getCurrent();
       paletteElements[selectedPalette].setCurrent(true);
+      
+      vec3 hsv = RGBtoHSV(palette->getCurrentColor());
+      hue = hsv.r;
+      sat = hsv.g;
+      val = hsv.b;
+      
+      imageRenderer->setTint(hue);
+      hueElem->setPosition(hue * BAR_W + BAR_X, BAR_Y + BAR_W * w_width / w_height);
+      satValElem->setPosition(sat * BAR_W + BAR_X - 0.75 / 128, BAR_Y + (val / 255.0 * BAR_W - 1.5 / 128) * w_width / w_height);
+      
       buildVertices();
    }
 }
@@ -162,13 +186,14 @@ void UI::selectHue(UI *ui, double x, double y) {
    ui->hue = x;
    ui->imageRenderer->setTint(ui->hue);
    ui->palette->setCurrentColor(HSVtoRGB(ui->hue, ui->sat, ui->val * 255));
+   ui->hueElem->setPosition(x * BAR_W + BAR_W, BAR_Y + BAR_W * w_width / w_height);
 }
 
 void UI::selectSatVal(UI *ui, double x, double y) {
    ui->sat = x;
    ui->val = y;
    ui->palette->setCurrentColor(HSVtoRGB(ui->hue, ui->sat, ui->val * 255));
-   ui->satValElem->setPosition(x * BAR_W + BAR_W, BAR_Y + y * BAR_W * w_width / w_height);
+   ui->satValElem->setPosition(x * BAR_W + BAR_X, BAR_Y + y * BAR_W * w_width / w_height);
 }
 
 void UI::selectElement(UI *ui, double x, double y) {
@@ -176,13 +201,13 @@ void UI::selectElement(UI *ui, double x, double y) {
    square[0] = BAR_W / gradeSize;
    square[1] = square[0] * w_width / w_height;
    
-   int newSelect = floor(x / square[0]) + floor(y / square[1]) * gradeSize;
+   int newSelect = floor(x / square[0]) + (floor(y / square[1]) - 1) * gradeSize;
    
    ui->palette->setCurrent(newSelect);
 }
 
 void UI::ClickInterfaceCommand::execute(double x, double y, bool press) {
-   if(x >= BAR_X && x <= BAR_X + BAR_W && y >= BAR_Y && y <= BAR_Y + BAR_H) {
+   if(x >= BAR_X - 0.1 && x <= BAR_X + BAR_W + 0.1 && y >= BAR_Y && y <= BAR_Y + BAR_H) {
       std::vector<UIElement *>::iterator it;
       for(it = parent->elements.begin(); it < parent->elements.end(); it ++) {
          (*it)->click(x, y);
@@ -222,7 +247,7 @@ void UIElement::click(double _x, double _y) {
 
 void ColorElement::pushVertices(vec4 *vertices, byte3 *colors, int &off) {
    colors[off] = color;
-   vertices[off++] = vec4(x, y, z, 1);
+   vertices[off++] = vec4(x, y, z, 0);
    colors[off] = color;
    vertices[off++] = vec4(x + w, y + h, z, 255);
 }
@@ -234,7 +259,7 @@ void ColorElement::pushVertices(vec4 *vertices, byte3 *colors, int &off) {
 void PaletteElement::pushVertices(vec4 *vertices, byte3 *colors, int &off) {
    if(current) {
       colors[off] = color;
-      vertices[off++] = vec4(x + w / 8, y + h / 8, z, 1);
+      vertices[off++] = vec4(x + w / 8, y + h / 8, z, 0);
       colors[off] = color;
       vertices[off++] = vec4(x + w * 7 / 8, y + h * 7 / 8, z, 255);
    }

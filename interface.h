@@ -104,7 +104,7 @@ private:
    PaletteElement *paletteElements;
    int selectedPalette;
    
-   ImageElement *satValElem;
+   ImageElement *satValElem, *hueElem;
    std::vector<UIElement *> elements;
    GLuint numColorElements, numImageElements;
 
